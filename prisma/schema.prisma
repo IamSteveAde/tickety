@@ -1,0 +1,150 @@
+// Prisma schema for the Tickety.africa Ticket & Event Engine.
+// Mirrors the shapes in lib/types.ts closely on purpose — lib/data.ts maps
+// between the two, so components never need to know a database exists.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ORGANISER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ORGANISER)
+  events       Event[]
+  createdAt    DateTime @default(now())
+}
+
+enum EventStatus {
+  live
+  pending
+  disabled
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  title         String
+  description   String
+  state         String
+  venue         String
+  date          DateTime
+  startTime     String
+  category      String
+  status        EventStatus @default(live)
+  featured      Boolean     @default(false)
+  trending      Boolean     @default(false)
+  coverGradient String
+  coverImageUrl String?
+  tags          String[]    @default([])
+  refundPolicy  String?
+  minAge        Int?
+
+  organiserId String
+  organiser   User @relation(fields: [organiserId], references: [id])
+
+  ticketTypes       TicketType[]
+  customQuestions   CustomQuestion[]
+  attendees         Attendee[]
+  listingFeePayment ListingFeePayment?
+
+  createdAt DateTime @default(now())
+
+  @@index([state])
+  @@index([category])
+  @@index([organiserId])
+}
+
+model TicketType {
+  id            String @id @default(cuid())
+  name          String
+  price         Int // Naira, 0 = free
+  quantityTotal Int
+  quantitySold  Int    @default(0)
+
+  eventId String
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  attendees Attendee[]
+}
+
+model CustomQuestion {
+  id       String   @id @default(cuid())
+  label    String
+  type     String   @default("text") // "text" | "select"
+  options  String[] @default([])
+  required Boolean  @default(false)
+
+  eventId String
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  paid
+  pending
+  failed
+}
+
+enum TicketStatus {
+  active
+  used
+  transferred
+  cancelled
+}
+
+model Attendee {
+  id            String        @id @default(cuid())
+  name          String
+  email         String
+  phone         String
+  ticketId      String        @unique // human-facing ticket number, e.g. TCK-88213
+  amountPaid    Int
+  purchaseDate  DateTime      @default(now())
+  paymentStatus PaymentStatus @default(pending)
+  checkInStatus Boolean       @default(false)
+  checkInTime   DateTime?
+  ticketStatus  TicketStatus  @default(active)
+  customAnswers Json?
+
+  eventId String
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  ticketTypeId String
+  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  transaction Transaction?
+}
+
+model Transaction {
+  id          String        @id @default(cuid())
+  amount      Int
+  platformFee Int
+  status      PaymentStatus @default(pending)
+  date        DateTime      @default(now())
+
+  attendeeId String   @unique
+  attendee   Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+}
+
+model ListingFeePayment {
+  id          String        @id @default(cuid())
+  eventId     String        @unique
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  amount      Int
+  paystackRef String        @unique
+  status      PaymentStatus @default(pending)
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+}

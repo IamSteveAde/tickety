@@ -1,0 +1,166 @@
+import { Attendee, EventItem, Transaction, AdminEventSummary } from "./types";
+
+export const events: EventItem[] = [
+  {
+    id: "evt_1",
+    slug: "afrobeats-picnic-lagos",
+    title: "Afrobeats Picnic — Lagos",
+    description:
+      "A relaxed afternoon of live afrobeats, food trucks, and picnic vibes by the water at Muri Okunola Park. Bring a blanket.",
+    state: "Lagos",
+    venue: "Muri Okunola Park, Victoria Island",
+    date: "2026-09-12",
+    startTime: "16:00",
+    category: "Music",
+    organiserName: "Spotlite Events Co.",
+    featured: true,
+    trending: true,
+    coverGradient: "from-plum-700 via-plum-600 to-leaf-600",
+    ticketTypes: [
+      { id: "tt_1", name: "Regular", price: 5000, quantityTotal: 300, quantitySold: 60 },
+      { id: "tt_2", name: "VIP", price: 15000, quantityTotal: 60, quantitySold: 28 },
+      { id: "tt_3", name: "Table for 4", price: 50000, quantityTotal: 10, quantitySold: 4 },
+    ],
+    customQuestions: [
+      { id: "q_1", label: "Which state are you travelling from?", type: "text", required: true },
+    ],
+  },
+  {
+    id: "evt_2",
+    slug: "tech-founders-mixer-abuja",
+    title: "Tech Founders Mixer — Abuja",
+    description:
+      "An evening of unstructured conversation for early-stage founders, operators, and the investors who back them. Free to attend, seats are limited.",
+    state: "FCT (Abuja)",
+    venue: "The Yard, Wuse II",
+    date: "2026-09-20",
+    startTime: "18:00",
+    category: "Tech",
+    organiserName: "Founders Table NG",
+    featured: true,
+    trending: false,
+    coverGradient: "from-plum-800 via-plum-700 to-plum-500",
+    ticketTypes: [
+      { id: "tt_4", name: "General Admission", price: 0, quantityTotal: 150, quantitySold: 112 },
+    ],
+    customQuestions: [
+      { id: "q_2", label: "What are you currently building?", type: "text", required: false },
+    ],
+  },
+  {
+    id: "evt_3",
+    slug: "comedy-night-port-harcourt",
+    title: "Comedy Night — PH",
+    description:
+      "A night of stand-up from Port Harcourt's sharpest new voices, headlined by a surprise guest from Lagos.",
+    state: "Rivers",
+    venue: "Genesis Event Centre, GRA",
+    date: "2026-09-04",
+    startTime: "20:00",
+    category: "Comedy",
+    organiserName: "Laff Factory PH",
+    featured: true,
+    trending: true,
+    coverGradient: "from-leaf-700 via-leaf-600 to-plum-600",
+    ticketTypes: [
+      { id: "tt_5", name: "Regular", price: 3000, quantityTotal: 200, quantitySold: 140 },
+      { id: "tt_6", name: "Front Row", price: 8000, quantityTotal: 40, quantitySold: 35 },
+    ],
+    customQuestions: [],
+  },
+  {
+    id: "evt_4",
+    slug: "lagos-street-food-festival",
+    title: "Lagos Street Food Festival",
+    description:
+      "Forty vendors, one Sunday, all the suya and small chops you can carry. Live DJ sets between bites.",
+    state: "Lagos",
+    venue: "Landmark Beach, Victoria Island",
+    date: "2026-10-04",
+    startTime: "12:00",
+    category: "Food & Drink",
+    organiserName: "Chop Life Collective",
+    featured: false,
+    trending: true,
+    coverGradient: "from-plum-600 via-leaf-600 to-leaf-500",
+    ticketTypes: [
+      { id: "tt_7", name: "Entry", price: 2000, quantityTotal: 1000, quantitySold: 340 },
+    ],
+    customQuestions: [],
+  },
+  {
+    id: "evt_5",
+    slug: "ibadan-art-walk",
+    title: "Ibadan Art Walk",
+    description:
+      "A curated walking exhibition through Bodija's gallery spaces, closing with a live sketch session and open mic.",
+    state: "Oyo",
+    venue: "Bodija Arts District",
+    date: "2026-09-27",
+    startTime: "10:00",
+    category: "Arts",
+    organiserName: "Bodija Creatives",
+    featured: false,
+    trending: false,
+    coverGradient: "from-plum-500 via-plum-700 to-plum-900",
+    ticketTypes: [
+      { id: "tt_8", name: "General Admission", price: 1500, quantityTotal: 250, quantitySold: 40 },
+    ],
+    customQuestions: [],
+  },
+  {
+    id: "evt_6",
+    slug: "enugu-founders-brunch",
+    title: "Enugu Founders Brunch",
+    description:
+      "A monthly working brunch for operators building outside Lagos and Abuja. This month's theme: distribution.",
+    state: "Enugu",
+    venue: "The Coal House, Independence Layout",
+    date: "2026-09-14",
+    startTime: "11:00",
+    category: "Networking",
+    organiserName: "Built in Enugu",
+    featured: false,
+    trending: false,
+    coverGradient: "from-leaf-600 via-plum-600 to-plum-800",
+    ticketTypes: [
+      { id: "tt_9", name: "General Admission", price: 4000, quantityTotal: 80, quantitySold: 22 },
+    ],
+    customQuestions: [
+      { id: "q_3", label: "Company name", type: "text", required: true },
+    ],
+  },
+];
+
+export function getEventBySlug(slug: string): EventItem | undefined {
+  return events.find((e) => e.slug === slug);
+}
+
+export const attendees: Attendee[] = [
+  { id: "att_1", name: "Ada Chukwu", email: "ada.c@gmail.com", phone: "0803xxxxxxx", ticketType: "VIP", ticketId: "TCK-88213", amountPaid: 30000, purchaseDate: "2026-08-20", paymentStatus: "paid", checkInStatus: false, ticketStatus: "active" },
+  { id: "att_2", name: "Tunde Bakare", email: "tunde.b@yahoo.com", phone: "0805xxxxxxx", ticketType: "Regular", amountPaid: 5000, ticketId: "TCK-88214", purchaseDate: "2026-08-21", paymentStatus: "paid", checkInStatus: true, checkInTime: "2026-09-12T16:22:00", ticketStatus: "used" },
+  { id: "att_3", name: "Chiamaka Obi", email: "chi.obi@gmail.com", phone: "0701xxxxxxx", ticketType: "Table for 4", ticketId: "TCK-88215", amountPaid: 50000, purchaseDate: "2026-08-22", paymentStatus: "paid", checkInStatus: false, ticketStatus: "active" },
+  { id: "att_4", name: "Femi Adebayo", email: "femi.a@outlook.com", phone: "0906xxxxxxx", ticketType: "Regular", ticketId: "TCK-88216", amountPaid: 5000, purchaseDate: "2026-08-23", paymentStatus: "pending", checkInStatus: false, ticketStatus: "active" },
+  { id: "att_5", name: "Ngozi Eze", email: "ngozi.eze@gmail.com", phone: "0809xxxxxxx", ticketType: "VIP", ticketId: "TCK-88217", amountPaid: 15000, purchaseDate: "2026-08-24", paymentStatus: "paid", checkInStatus: true, checkInTime: "2026-09-12T16:05:00", ticketStatus: "used" },
+  { id: "att_6", name: "Segun Owolabi", email: "segun.o@gmail.com", phone: "0812xxxxxxx", ticketType: "Regular", ticketId: "TCK-88218", amountPaid: 5000, purchaseDate: "2026-08-24", paymentStatus: "paid", checkInStatus: false, ticketStatus: "active" },
+  { id: "att_7", name: "Blessing Nwachukwu", email: "blessing.n@gmail.com", phone: "0703xxxxxxx", ticketType: "Regular", ticketId: "TCK-88219", amountPaid: 5000, purchaseDate: "2026-08-25", paymentStatus: "failed", checkInStatus: false, ticketStatus: "cancelled" },
+  { id: "att_8", name: "Ibrahim Musa", email: "ibrahim.m@gmail.com", phone: "0813xxxxxxx", ticketType: "VIP", ticketId: "TCK-88220", amountPaid: 15000, purchaseDate: "2026-08-26", paymentStatus: "paid", checkInStatus: false, ticketStatus: "active" },
+];
+
+export const transactions: Transaction[] = [
+  { id: "txn_1", eventTitle: "Afrobeats Picnic — Lagos", organiserName: "Spotlite Events Co.", amount: 30000, platformFee: 3000, date: "2026-08-20", status: "paid" },
+  { id: "txn_2", eventTitle: "Comedy Night — PH", organiserName: "Laff Factory PH", amount: 8000, platformFee: 800, date: "2026-08-21", status: "paid" },
+  { id: "txn_3", eventTitle: "Lagos Street Food Festival", organiserName: "Chop Life Collective", amount: 2000, platformFee: 200, date: "2026-08-22", status: "paid" },
+  { id: "txn_4", eventTitle: "Afrobeats Picnic — Lagos", organiserName: "Spotlite Events Co.", amount: 5000, platformFee: 500, date: "2026-08-23", status: "pending" },
+  { id: "txn_5", eventTitle: "Ibadan Art Walk", organiserName: "Bodija Creatives", amount: 1500, platformFee: 150, date: "2026-08-24", status: "paid" },
+  { id: "txn_6", eventTitle: "Enugu Founders Brunch", organiserName: "Built in Enugu", amount: 4000, platformFee: 400, date: "2026-08-24", status: "failed" },
+];
+
+export const adminEvents: AdminEventSummary[] = [
+  { id: "evt_1", title: "Afrobeats Picnic — Lagos", organiserName: "Spotlite Events Co.", status: "live", ticketsSold: 278, gross: 1940000 },
+  { id: "evt_2", title: "Tech Founders Mixer — Abuja", organiserName: "Founders Table NG", status: "live", ticketsSold: 112, gross: 0 },
+  { id: "evt_3", title: "Comedy Night — PH", organiserName: "Laff Factory PH", status: "live", ticketsSold: 175, gross: 700000 },
+  { id: "evt_4", title: "Lagos Street Food Festival", organiserName: "Chop Life Collective", status: "pending", ticketsSold: 340, gross: 680000 },
+  { id: "evt_5", title: "Ibadan Art Walk", organiserName: "Bodija Creatives", status: "live", ticketsSold: 40, gross: 60000 },
+  { id: "evt_6", title: "Enugu Founders Brunch", organiserName: "Built in Enugu", status: "disabled", ticketsSold: 22, gross: 88000 },
+];

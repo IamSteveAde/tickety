@@ -1,0 +1,2 @@
+export const LISTING_FEE_NAIRA = 50000;
+export const LISTING_FEE_KOBO = LISTING_FEE_NAIRA * 100;
