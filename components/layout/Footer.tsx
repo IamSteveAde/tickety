@@ -69,18 +69,13 @@ export default function Footer() {
           <div className="grid gap-10 lg:grid-cols-[1.3fr_.7fr] lg:items-end">
             {/* Brand */}
             <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-gradient-to-br from-[#8B5CF6] to-[#5B21B6] shadow-[0_10px_30px_rgba(124,58,237,0.2)]">
-                  <span className="font-display text-lg font-semibold text-white">
-                    t
-                  </span>
-                </div>
-
-                <span className="font-display text-lg font-semibold tracking-[-0.025em] text-white">
-                  tickety
-                  <span className="text-[#A78BFA]">.africa</span>
-                </span>
-              </div>
+              <div className="flex items-center">
+  <img
+    src="/images/logo/logos.png"
+    alt="Tickety"
+    className="h-11 w-auto object-contain brightness-0 invert"
+  />
+</div>
 
               <h2 className="mt-8 max-w-3xl font-display text-4xl font-semibold leading-[0.95] tracking-[-0.055em] text-white sm:text-5xl lg:text-6xl">
                 Find the moment.
