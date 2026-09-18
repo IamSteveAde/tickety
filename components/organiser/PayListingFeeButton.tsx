@@ -10,15 +10,26 @@ import {
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 
+type PayListingFeeButtonProps = {
+  eventId: string;
+  compact?: boolean;
+};
+
 export default function PayListingFeeButton({
   eventId,
-}: {
-  eventId: string;
-}) {
+  compact = false,
+}: PayListingFeeButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleClick() {
+  async function handleClick(
+    event: React.MouseEvent<HTMLButtonElement>
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (loading) return;
+
     setLoading(true);
     setError("");
 
@@ -27,6 +38,9 @@ export default function PayListingFeeButton({
         `/api/events/${eventId}/listing-fee`,
         {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -34,7 +48,8 @@ export default function PayListingFeeButton({
 
       if (!res.ok) {
         throw new Error(
-          data?.error ?? "Something went wrong"
+          data?.error ||
+            "Unable to start payment."
         );
       }
 
@@ -44,17 +59,96 @@ export default function PayListingFeeButton({
         );
       }
 
-      window.location.href = data.redirectUrl;
+      /*
+       * IMPORTANT:
+       * Send the organiser directly to Paystack.
+       */
+      window.location.assign(
+        data.redirectUrl
+      );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong"
+          : "Something went wrong. Please try again."
       );
 
       setLoading(false);
     }
   }
+
+  /*
+   * =========================================================
+   * COMPACT VERSION
+   * Used inside the organiser dashboard.
+   * =========================================================
+   */
+
+  if (compact) {
+    return (
+      <div className="flex flex-col items-end gap-2">
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={loading}
+          className="
+            inline-flex
+            h-9
+            items-center
+            gap-2
+            rounded-full
+            bg-[#111014]
+            px-4
+            text-[10px]
+            font-semibold
+            text-white
+            shadow-[0_6px_18px_rgba(17,16,20,0.08)]
+            transition-all
+            duration-200
+            hover:-translate-y-0.5
+            hover:bg-[#7C3AED]
+            hover:shadow-[0_8px_22px_rgba(124,58,237,0.16)]
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
+        >
+          {loading ? (
+            <>
+              <Loader2
+                size={12}
+                className="animate-spin"
+              />
+
+              <span>
+                Redirecting...
+              </span>
+            </>
+          ) : (
+            <>
+              <span>
+                Pay ₦50,000
+              </span>
+
+              <ArrowRight size={12} />
+            </>
+          )}
+        </button>
+
+        {error && (
+          <p className="max-w-[180px] text-right text-[10px] leading-4 text-red-500">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  /*
+   * =========================================================
+   * FULL VERSION
+   * Used wherever you want the full publishing/payment card.
+   * =========================================================
+   */
 
   return (
     <div className="w-full max-w-md">
@@ -70,6 +164,7 @@ export default function PayListingFeeButton({
         "
       >
         {/* Ambient glow */}
+
         <div
           className="
             pointer-events-none
@@ -86,6 +181,7 @@ export default function PayListingFeeButton({
 
         <div className="relative p-5 sm:p-6">
           {/* Header */}
+
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
@@ -125,9 +221,11 @@ export default function PayListingFeeButton({
           </div>
 
           {/* Divider */}
+
           <div className="my-5 h-px bg-black/[0.06]" />
 
           {/* Benefits */}
+
           <div className="space-y-3">
             <Benefit text="Your event goes live on Tickety" />
 
@@ -137,6 +235,7 @@ export default function PayListingFeeButton({
           </div>
 
           {/* Payment button */}
+
           <div className="mt-6">
             <Button
               type="button"
@@ -163,7 +262,7 @@ export default function PayListingFeeButton({
               "
             >
               {loading ? (
-                <div className="flex items-center justify-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <Loader2
                     size={16}
                     className="animate-spin"
@@ -172,9 +271,9 @@ export default function PayListingFeeButton({
                   <span>
                     Redirecting to payment...
                   </span>
-                </div>
+                </span>
               ) : (
-                <div className="flex items-center justify-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <span>
                     Pay ₦50,000 to publish
                   </span>
@@ -183,12 +282,13 @@ export default function PayListingFeeButton({
                     size={16}
                     strokeWidth={2}
                   />
-                </div>
+                </span>
               )}
             </Button>
           </div>
 
           {/* Security note */}
+
           <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-black/30">
             <ShieldCheck size={13} />
 
@@ -199,6 +299,7 @@ export default function PayListingFeeButton({
           </div>
 
           {/* Error */}
+
           {error && (
             <div
               className="
@@ -227,7 +328,15 @@ export default function PayListingFeeButton({
   );
 }
 
-function Benefit({ text }: { text: string }) {
+/* =========================================================
+   BENEFIT
+========================================================= */
+
+function Benefit({
+  text,
+}: {
+  text: string;
+}) {
   return (
     <div className="flex items-center gap-2.5">
       <div

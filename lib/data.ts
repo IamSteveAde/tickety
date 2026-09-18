@@ -10,14 +10,15 @@ import {
 import { Prisma } from "@prisma/client";
 import { LISTING_FEE_NAIRA } from "@/lib/constants";
 
-
 const eventInclude = {
   organiser: true,
   ticketTypes: true,
   customQuestions: true,
 } satisfies Prisma.EventInclude;
 
-type EventWithRelations = Prisma.EventGetPayload<{ include: typeof eventInclude }>;
+type EventWithRelations = Prisma.EventGetPayload<{
+  include: typeof eventInclude;
+}>;
 
 const COVER_GRADIENTS = [
   "from-plum-700 via-plum-600 to-leaf-600",
@@ -29,17 +30,25 @@ const COVER_GRADIENTS = [
 ];
 
 function randomCoverGradient(): string {
-  return COVER_GRADIENTS[Math.floor(Math.random() * COVER_GRADIENTS.length)];
+  return COVER_GRADIENTS[
+    Math.floor(Math.random() * COVER_GRADIENTS.length)
+  ];
 }
 
 function formatCustomAnswers(
   customAnswers: Prisma.JsonValue | null,
   questions: { id: string; label: string }[]
 ): string {
-  if (!customAnswers || typeof customAnswers !== "object") return "";
+  if (!customAnswers || typeof customAnswers !== "object") {
+    return "";
+  }
+
   const answers = customAnswers as Record<string, string>;
+
   return questions
-    .map((q) => (answers[q.id] ? `${q.label}: ${answers[q.id]}` : null))
+    .map((q) =>
+      answers[q.id] ? `${q.label}: ${answers[q.id]}` : null
+    )
     .filter(Boolean)
     .join("; ");
 }
@@ -64,6 +73,7 @@ function mapEvent(event: EventWithRelations): EventItem {
     tags: event.tags,
     refundPolicy: event.refundPolicy ?? undefined,
     minAge: event.minAge ?? undefined,
+
     ticketTypes: event.ticketTypes.map((t) => ({
       id: t.id,
       name: t.name,
@@ -71,6 +81,7 @@ function mapEvent(event: EventWithRelations): EventItem {
       quantityTotal: t.quantityTotal,
       quantitySold: t.quantitySold,
     })),
+
     customQuestions: event.customQuestions.map(
       (q): CustomQuestion => ({
         id: q.id,
@@ -84,7 +95,9 @@ function mapEvent(event: EventWithRelations): EventItem {
 }
 
 function mapAttendee(
-  a: Prisma.AttendeeGetPayload<{ include: { ticketType: true } }>,
+  a: Prisma.AttendeeGetPayload<{
+    include: { ticketType: true };
+  }>,
   customQuestions: { id: string; label: string }[] = []
 ): Attendee {
   return {
@@ -100,136 +113,273 @@ function mapAttendee(
     checkInStatus: a.checkInStatus,
     checkInTime: a.checkInTime?.toISOString(),
     ticketStatus: a.ticketStatus,
-    answers: formatCustomAnswers(a.customAnswers, customQuestions),
+    answers: formatCustomAnswers(
+      a.customAnswers,
+      customQuestions
+    ),
   };
 }
 
-// getEvents/getEventBySlug only return "live" events — a free event awaiting
-// its listing fee sits at "pending" and stays invisible to the public until paid.
+/* ===============================================================
+   PUBLIC EVENTS
+=============================================================== */
+
 export async function getEvents(): Promise<EventItem[]> {
   const events = await prisma.event.findMany({
-    where: { status: "live" },
+    where: {
+      status: "live",
+    },
     include: eventInclude,
-    orderBy: { date: "asc" },
+    orderBy: {
+      date: "asc",
+    },
   });
+
   return events.map(mapEvent);
 }
 
-export async function getMostBookedEvents(limit = 3): Promise<EventItem[]> {
+export async function getMostBookedEvents(
+  limit = 3
+): Promise<EventItem[]> {
   const events = await prisma.event.findMany({
-    where: { status: "live" },
+    where: {
+      status: "live",
+    },
     include: eventInclude,
   });
 
   const ranked = events
     .map((event) => ({
       event,
-      sold: event.ticketTypes.reduce((sum, t) => sum + t.quantitySold, 0),
+      sold: event.ticketTypes.reduce(
+        (sum, ticket) => sum + ticket.quantitySold,
+        0
+      ),
     }))
     .sort((a, b) => b.sold - a.sold);
 
-  return ranked.slice(0, limit).map((r) => mapEvent(r.event));
+  return ranked
+    .slice(0, limit)
+    .map((item) => mapEvent(item.event));
 }
 
-export async function getEventBySlug(slug: string): Promise<EventItem | null> {
+export async function getEventBySlug(
+  slug: string
+): Promise<EventItem | null> {
   const event = await prisma.event.findUnique({
-    where: { slug },
+    where: {
+      slug,
+    },
     include: eventInclude,
   });
+
   return event ? mapEvent(event) : null;
 }
 
-export async function getEventById(id: string): Promise<EventItem | null> {
+export async function getEventById(
+  id: string
+): Promise<EventItem | null> {
   const event = await prisma.event.findUnique({
-    where: { id },
+    where: {
+      id,
+    },
     include: eventInclude,
   });
+
   return event ? mapEvent(event) : null;
 }
 
 export async function getAllEventSlugs(): Promise<string[]> {
-  const events = await prisma.event.findMany({ where: { status: "live" }, select: { slug: true } });
-  return events.map((e) => e.slug);
+  const events = await prisma.event.findMany({
+    where: {
+      status: "live",
+    },
+    select: {
+      slug: true,
+    },
+  });
+
+  return events.map((event) => event.slug);
 }
 
-export async function getAttendeesForEventSlug(slug: string): Promise<Attendee[]> {
-  const event = await prisma.event.findUnique({ where: { slug }, include: { customQuestions: true } });
-  if (!event) return [];
+/* ===============================================================
+   ATTENDEES
+=============================================================== */
+
+export async function getAttendeesForEventSlug(
+  slug: string
+): Promise<Attendee[]> {
+  const event = await prisma.event.findUnique({
+    where: {
+      slug,
+    },
+    include: {
+      customQuestions: true,
+    },
+  });
+
+  if (!event) {
+    return [];
+  }
 
   const attendees = await prisma.attendee.findMany({
-    where: { eventId: event.id },
-    include: { ticketType: true },
-    orderBy: { purchaseDate: "desc" },
+    where: {
+      eventId: event.id,
+    },
+    include: {
+      ticketType: true,
+    },
+    orderBy: {
+      purchaseDate: "desc",
+    },
   });
-  return attendees.map((a) => mapAttendee(a, event.customQuestions));
+
+  return attendees.map((attendee) =>
+    mapAttendee(attendee, event.customQuestions)
+  );
 }
 
-export async function getAttendeesForEventId(eventId: string): Promise<Attendee[]> {
-  const event = await prisma.event.findUnique({ where: { id: eventId }, include: { customQuestions: true } });
-  if (!event) return [];
+export async function getAttendeesForEventId(
+  eventId: string
+): Promise<Attendee[]> {
+  const event = await prisma.event.findUnique({
+    where: {
+      id: eventId,
+    },
+    include: {
+      customQuestions: true,
+    },
+  });
+
+  if (!event) {
+    return [];
+  }
 
   const attendees = await prisma.attendee.findMany({
-    where: { eventId },
-    include: { ticketType: true },
-    orderBy: { purchaseDate: "desc" },
+    where: {
+      eventId,
+    },
+    include: {
+      ticketType: true,
+    },
+    orderBy: {
+      purchaseDate: "desc",
+    },
   });
-  return attendees.map((a) => mapAttendee(a, event.customQuestions));
+
+  return attendees.map((attendee) =>
+    mapAttendee(attendee, event.customQuestions)
+  );
 }
+
+/* ===============================================================
+   TRANSACTIONS
+=============================================================== */
 
 export async function getTransactions(): Promise<Transaction[]> {
   const transactions = await prisma.transaction.findMany({
-    include: { attendee: { include: { event: { include: { organiser: true } } } } },
-    orderBy: { date: "desc" },
+    include: {
+      attendee: {
+        include: {
+          event: {
+            include: {
+              organiser: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      date: "desc",
+    },
   });
 
-  return transactions.map((t) => ({
-    id: t.id,
-    eventTitle: t.attendee.event.title,
-    organiserName: t.attendee.event.organiser.name,
-    amount: t.amount,
-    platformFee: t.platformFee,
-    date: t.date.toISOString().slice(0, 10),
-    status: t.status,
+  return transactions.map((transaction) => ({
+    id: transaction.id,
+    eventTitle: transaction.attendee.event.title,
+    organiserName: transaction.attendee.event.organiser.name,
+    amount: transaction.amount,
+    platformFee: transaction.platformFee,
+    date: transaction.date.toISOString().slice(0, 10),
+    status: transaction.status,
   }));
 }
 
-export async function getAdminEvents(): Promise<AdminEventSummary[]> {
+/* ===============================================================
+   ADMIN EVENTS
+=============================================================== */
+
+export async function getAdminEvents(): Promise<
+  AdminEventSummary[]
+> {
   const events = await prisma.event.findMany({
-    include: { organiser: true, attendees: true },
+    include: {
+      organiser: true,
+      attendees: true,
+    },
   });
 
   return events.map((event) => {
-    const paidAttendees = event.attendees.filter((a) => a.paymentStatus === "paid");
+    const paidAttendees = event.attendees.filter(
+      (attendee) => attendee.paymentStatus === "paid"
+    );
+
     return {
       id: event.id,
       title: event.title,
       organiserName: event.organiser.name,
       status: event.status,
       ticketsSold: event.attendees.length,
-      gross: paidAttendees.reduce((sum, a) => sum + a.amountPaid, 0),
+      gross: paidAttendees.reduce(
+        (sum, attendee) => sum + attendee.amountPaid,
+        0
+      ),
     };
   });
 }
 
-export async function getEventsByOrganiserId(organiserId: string): Promise<AdminEventSummary[]> {
+/* ===============================================================
+   ORGANISER EVENTS
+=============================================================== */
+
+export async function getEventsByOrganiserId(
+  organiserId: string
+): Promise<AdminEventSummary[]> {
   const events = await prisma.event.findMany({
-    where: { organiserId },
-    include: { organiser: true, attendees: true },
-    orderBy: { date: "asc" },
+    where: {
+      organiserId,
+    },
+    include: {
+      organiser: true,
+      attendees: true,
+    },
+    orderBy: {
+      date: "asc",
+    },
   });
 
   return events.map((event) => {
-    const paidAttendees = event.attendees.filter((a) => a.paymentStatus === "paid");
+    const paidAttendees = event.attendees.filter(
+      (attendee) => attendee.paymentStatus === "paid"
+    );
+
     return {
       id: event.id,
       title: event.title,
       organiserName: event.organiser.name,
       status: event.status,
       ticketsSold: event.attendees.length,
-      gross: paidAttendees.reduce((sum, a) => sum + a.amountPaid, 0),
+      gross: paidAttendees.reduce(
+        (sum, attendee) => sum + attendee.amountPaid,
+        0
+      ),
     };
   });
 }
+
+/* ===============================================================
+   ORGANISER SUMMARY
+=============================================================== */
 
 export interface OrganiserSummary {
   id: string;
@@ -238,27 +388,54 @@ export interface OrganiserSummary {
   eventCount: number;
 }
 
-export async function getOrganisersSummary(): Promise<OrganiserSummary[]> {
+export async function getOrganisersSummary(): Promise<
+  OrganiserSummary[]
+> {
   const organisers = await prisma.user.findMany({
-    where: { role: "ORGANISER" },
-    include: { _count: { select: { events: true } } },
-    orderBy: { createdAt: "desc" },
+    where: {
+      role: "ORGANISER",
+    },
+    include: {
+      _count: {
+        select: {
+          events: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  return organisers.map((o) => ({
-    id: o.id,
-    name: o.name,
-    email: o.email,
-    eventCount: o._count.events,
+  return organisers.map((organiser) => ({
+    id: organiser.id,
+    name: organiser.name,
+    email: organiser.email,
+    eventCount: organiser._count.events,
   }));
 }
+
+/* ===============================================================
+   EVENT STATUS
+=============================================================== */
 
 export async function setEventStatus(
   eventId: string,
   status: "live" | "pending" | "disabled"
 ): Promise<void> {
-  await prisma.event.update({ where: { id: eventId }, data: { status } });
+  await prisma.event.update({
+    where: {
+      id: eventId,
+    },
+    data: {
+      status,
+    },
+  });
 }
+
+/* ===============================================================
+   CREATE EVENT
+=============================================================== */
 
 interface CreateEventInput {
   title: string;
@@ -276,11 +453,20 @@ interface CreateEventInput {
   tags?: string[];
   refundPolicy?: string;
   minAge?: number;
-  ticketTypes: { name: string; price: number; quantityTotal: number }[];
-  customQuestions: { label: string; required?: boolean }[];
+  ticketTypes: {
+    name: string;
+    price: number;
+    quantityTotal: number;
+  }[];
+  customQuestions: {
+    label: string;
+    required?: boolean;
+  }[];
 }
 
-export async function createEvent(input: CreateEventInput): Promise<EventItem> {
+export async function createEvent(
+  input: CreateEventInput
+): Promise<EventItem> {
   const event = await prisma.event.create({
     data: {
       title: input.title,
@@ -293,41 +479,60 @@ export async function createEvent(input: CreateEventInput): Promise<EventItem> {
       category: input.category,
       organiserId: input.organiserId,
       status: input.status ?? "live",
-      coverGradient: input.coverGradient ?? randomCoverGradient(),
+      coverGradient:
+        input.coverGradient ?? randomCoverGradient(),
       coverImageUrl: input.coverImageUrl,
       tags: input.tags ?? [],
       refundPolicy: input.refundPolicy,
       minAge: input.minAge,
+
       ticketTypes: {
-        create: input.ticketTypes.map((t) => ({
-          name: t.name,
-          price: t.price,
-          quantityTotal: t.quantityTotal,
+        create: input.ticketTypes.map((ticket) => ({
+          name: ticket.name,
+          price: ticket.price,
+          quantityTotal: ticket.quantityTotal,
         })),
       },
+
       customQuestions: {
-        create: input.customQuestions.map((q) => ({
-          label: q.label,
-          required: q.required ?? false,
+        create: input.customQuestions.map((question) => ({
+          label: question.label,
+          required: question.required ?? false,
         })),
       },
     },
+
     include: eventInclude,
   });
 
   return mapEvent(event);
 }
 
+/* ===============================================================
+   LISTING FEE
+=============================================================== */
+
 /**
- * Called once Paystack confirms a free event's listing fee was actually
- * paid — either from the browser callback right after checkout, or from
- * the server-to-server webhook. Safe to call more than once for the same
- * event (idempotent), since both paths can fire for the same payment.
+ * Called once Paystack confirms a free event's listing fee
+ * was actually paid.
+ *
+ * This can safely be called more than once for the same event.
  */
-export async function markListingFeePaid(eventId: string, paystackRef: string): Promise<void> {
+export async function markListingFeePaid(
+  eventId: string,
+  paystackRef: string
+): Promise<void> {
   await prisma.listingFeePayment.upsert({
-    where: { eventId },
-    update: { status: "paid", paidAt: new Date(), paystackRef },
+    where: {
+      eventId,
+    },
+
+    update: {
+      status: "paid",
+      paidAt: new Date(),
+      paystackRef,
+    },
+
     create: {
       eventId,
       amount: LISTING_FEE_NAIRA,
@@ -336,8 +541,20 @@ export async function markListingFeePaid(eventId: string, paystackRef: string): 
       paidAt: new Date(),
     },
   });
-  await prisma.event.update({ where: { id: eventId }, data: { status: "live" } });
+
+  await prisma.event.update({
+    where: {
+      id: eventId,
+    },
+    data: {
+      status: "live",
+    },
+  });
 }
+
+/* ===============================================================
+   ORGANISER CONTACTS
+=============================================================== */
 
 export interface ContactRow {
   id: string;
@@ -352,24 +569,46 @@ export interface ContactRow {
   answers: string;
 }
 
-export async function getContactsForOrganiser(organiserId: string): Promise<ContactRow[]> {
+export async function getContactsForOrganiser(
+  organiserId: string
+): Promise<ContactRow[]> {
   const attendees = await prisma.attendee.findMany({
-    where: { event: { organiserId } },
-    include: { ticketType: true, event: { include: { customQuestions: true } } },
-    orderBy: { purchaseDate: "desc" },
+    where: {
+      event: {
+        organiserId,
+      },
+    },
+
+    include: {
+      ticketType: true,
+      event: {
+        include: {
+          customQuestions: true,
+        },
+      },
+    },
+
+    orderBy: {
+      purchaseDate: "desc",
+    },
   });
 
-  return attendees.map((a) => ({
-    id: a.id,
-    eventTitle: a.event.title,
-    name: a.name,
-    email: a.email,
-    phone: a.phone,
-    ticketType: a.ticketType.name,
-    amountPaid: a.amountPaid,
-    purchaseDate: a.purchaseDate.toISOString().slice(0, 10),
-    paymentStatus: a.paymentStatus,
-    answers: formatCustomAnswers(a.customAnswers, a.event.customQuestions),
+  return attendees.map((attendee) => ({
+    id: attendee.id,
+    eventTitle: attendee.event.title,
+    name: attendee.name,
+    email: attendee.email,
+    phone: attendee.phone,
+    ticketType: attendee.ticketType.name,
+    amountPaid: attendee.amountPaid,
+    purchaseDate: attendee.purchaseDate
+      .toISOString()
+      .slice(0, 10),
+    paymentStatus: attendee.paymentStatus,
+    answers: formatCustomAnswers(
+      attendee.customAnswers,
+      attendee.event.customQuestions
+    ),
   }));
 }
 
@@ -377,26 +616,412 @@ export interface AdminContactRow extends ContactRow {
   organiserName: string;
 }
 
-export async function getAllContactsAdmin(): Promise<AdminContactRow[]> {
+export async function getAllContactsAdmin(): Promise<
+  AdminContactRow[]
+> {
   const attendees = await prisma.attendee.findMany({
     include: {
       ticketType: true,
-      event: { include: { customQuestions: true, organiser: true } },
+      event: {
+        include: {
+          customQuestions: true,
+          organiser: true,
+        },
+      },
     },
-    orderBy: { purchaseDate: "desc" },
+
+    orderBy: {
+      purchaseDate: "desc",
+    },
   });
 
-  return attendees.map((a) => ({
-    id: a.id,
-    eventTitle: a.event.title,
-    organiserName: a.event.organiser.name,
-    name: a.name,
-    email: a.email,
-    phone: a.phone,
-    ticketType: a.ticketType.name,
-    amountPaid: a.amountPaid,
-    purchaseDate: a.purchaseDate.toISOString().slice(0, 10),
-    paymentStatus: a.paymentStatus,
-    answers: formatCustomAnswers(a.customAnswers, a.event.customQuestions),
+  return attendees.map((attendee) => ({
+    id: attendee.id,
+    eventTitle: attendee.event.title,
+    organiserName: attendee.event.organiser.name,
+    name: attendee.name,
+    email: attendee.email,
+    phone: attendee.phone,
+    ticketType: attendee.ticketType.name,
+    amountPaid: attendee.amountPaid,
+    purchaseDate: attendee.purchaseDate
+      .toISOString()
+      .slice(0, 10),
+    paymentStatus: attendee.paymentStatus,
+    answers: formatCustomAnswers(
+      attendee.customAnswers,
+      attendee.event.customQuestions
+    ),
   }));
+}
+
+/* ===============================================================
+   UPDATE EVENT
+=============================================================== */
+
+export interface UpdateEventInput {
+  title: string;
+  description: string;
+  state: string;
+  venue: string;
+  date: string;
+  startTime: string;
+  category: string;
+  coverImageUrl?: string;
+  tags?: string[];
+  refundPolicy?: string;
+  minAge?: number;
+
+  ticketTypes: {
+    id?: string;
+    name: string;
+    price: number;
+    quantityTotal: number;
+  }[];
+
+  customQuestions: {
+    id?: string;
+    label: string;
+    required?: boolean;
+  }[];
+}
+
+export async function updateEvent(
+  eventId: string,
+  organiserId: string,
+  input: UpdateEventInput
+): Promise<EventItem> {
+  /*
+   * Always verify ownership first.
+   *
+   * This prevents an organiser from editing another organiser's
+   * event simply by changing the event ID sent by the browser.
+   */
+  const existing = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organiserId,
+    },
+
+    include: {
+      ticketTypes: true,
+      customQuestions: true,
+    },
+  });
+
+  if (!existing) {
+    throw new Error("Event not found");
+  }
+
+  /*
+   * -------------------------------------------------------------
+   * VALIDATE TICKET TYPES
+   * -------------------------------------------------------------
+   *
+   * Ticket types with existing sales cannot be removed because
+   * attendees reference their ticketType IDs.
+   */
+
+  const existingTicketIds = new Set(
+    existing.ticketTypes.map((ticket) => ticket.id)
+  );
+
+  const incomingTicketIds = new Set(
+    input.ticketTypes
+      .map((ticket) => ticket.id)
+      .filter((id): id is string => Boolean(id))
+  );
+
+  const soldTicketsBeingRemoved = existing.ticketTypes.some(
+    (ticket) =>
+      ticket.quantitySold > 0 &&
+      !incomingTicketIds.has(ticket.id)
+  );
+
+  if (soldTicketsBeingRemoved) {
+    throw new Error(
+      "A ticket type with tickets already sold cannot be removed."
+    );
+  }
+
+  /*
+   * Quantity cannot be reduced below the amount already sold.
+   */
+
+  for (const ticket of input.ticketTypes) {
+    if (!ticket.id) {
+      continue;
+    }
+
+    const existingTicket = existing.ticketTypes.find(
+      (item) => item.id === ticket.id
+    );
+
+    if (
+      existingTicket &&
+      ticket.quantityTotal < existingTicket.quantitySold
+    ) {
+      throw new Error(
+        `${existingTicket.name} cannot have its quantity reduced below ${existingTicket.quantitySold} tickets sold.`
+      );
+    }
+  }
+
+  /*
+   * -------------------------------------------------------------
+   * VALIDATE CUSTOM QUESTIONS
+   * -------------------------------------------------------------
+   */
+
+  const existingQuestionIds = new Set(
+    existing.customQuestions.map(
+      (question) => question.id
+    )
+  );
+
+  const incomingQuestionIds = new Set(
+    input.customQuestions
+      .map((question) => question.id)
+      .filter((id): id is string => Boolean(id))
+  );
+
+  /*
+   * -------------------------------------------------------------
+   * UPDATE EVERYTHING IN ONE TRANSACTION
+   * -------------------------------------------------------------
+   */
+
+  const result = await prisma.$transaction(async (tx) => {
+    /*
+     * Update the main event.
+     *
+     * We deliberately do not change the slug here.
+     * This keeps existing public URLs stable if the organiser
+     * changes the event title.
+     */
+
+    const event = await tx.event.update({
+      where: {
+        id: eventId,
+      },
+
+      data: {
+        title: input.title,
+        description: input.description,
+        state: input.state,
+        venue: input.venue,
+        date: new Date(input.date),
+        startTime: input.startTime,
+        category: input.category,
+        coverImageUrl: input.coverImageUrl || null,
+        tags: input.tags ?? [],
+        refundPolicy: input.refundPolicy || null,
+        minAge: input.minAge ?? null,
+      },
+    });
+
+    /*
+     * -----------------------------------------------------------
+     * UPDATE / CREATE TICKET TYPES
+     * -----------------------------------------------------------
+     */
+
+    for (const ticket of input.ticketTypes) {
+      if (
+        ticket.id &&
+        existingTicketIds.has(ticket.id)
+      ) {
+        await tx.ticketType.update({
+          where: {
+            id: ticket.id,
+          },
+
+          data: {
+            name: ticket.name,
+            price: ticket.price,
+            quantityTotal: ticket.quantityTotal,
+          },
+        });
+      } else {
+        await tx.ticketType.create({
+          data: {
+            name: ticket.name,
+            price: ticket.price,
+            quantityTotal: ticket.quantityTotal,
+            eventId,
+          },
+        });
+      }
+    }
+
+    /*
+     * -----------------------------------------------------------
+     * DELETE UNUSED TICKET TYPES
+     * -----------------------------------------------------------
+     *
+     * Only ticket types with zero sales can be removed.
+     */
+
+    for (const existingTicket of existing.ticketTypes) {
+      if (
+        !incomingTicketIds.has(existingTicket.id) &&
+        existingTicket.quantitySold === 0
+      ) {
+        await tx.ticketType.delete({
+          where: {
+            id: existingTicket.id,
+          },
+        });
+      }
+    }
+
+    /*
+     * -----------------------------------------------------------
+     * UPDATE / CREATE CUSTOM QUESTIONS
+     * -----------------------------------------------------------
+     */
+
+    for (const question of input.customQuestions) {
+      if (
+        question.id &&
+        existingQuestionIds.has(question.id)
+      ) {
+        await tx.customQuestion.update({
+          where: {
+            id: question.id,
+          },
+
+          data: {
+            label: question.label,
+            required: question.required ?? false,
+          },
+        });
+      } else {
+        await tx.customQuestion.create({
+          data: {
+            label: question.label,
+            required: question.required ?? false,
+            eventId,
+          },
+        });
+      }
+    }
+
+    /*
+     * -----------------------------------------------------------
+     * DELETE UNUSED QUESTIONS
+     * -----------------------------------------------------------
+     *
+     * Existing attendee answers reference question IDs.
+     *
+     * If attendees already exist, we preserve old questions so
+     * their historical answers remain meaningful.
+     */
+
+    const attendeeCount = await tx.attendee.count({
+      where: {
+        eventId,
+      },
+    });
+
+    if (attendeeCount === 0) {
+      for (const existingQuestion of existing.customQuestions) {
+        if (
+          !incomingQuestionIds.has(existingQuestion.id)
+        ) {
+          await tx.customQuestion.delete({
+            where: {
+              id: existingQuestion.id,
+            },
+          });
+        }
+      }
+    }
+
+    return event;
+  });
+
+  /*
+   * -------------------------------------------------------------
+   * RELOAD COMPLETE EVENT
+   * -------------------------------------------------------------
+   *
+   * The transaction above only returns the Event itself.
+   * Reload it with all relations so mapEvent() receives the same
+   * structure as every other event query.
+   */
+
+  const fullEvent = await prisma.event.findUnique({
+    where: {
+      id: result.id,
+    },
+
+    include: eventInclude,
+  });
+
+  if (!fullEvent) {
+    throw new Error("Updated event could not be loaded.");
+  }
+
+  return mapEvent(fullEvent);
+}
+
+/* ===============================================================
+   DELETE EVENT
+=============================================================== */
+
+export async function deleteEvent(
+  eventId: string,
+  organiserId: string
+): Promise<void> {
+  /*
+   * Verify that the event belongs to this organiser.
+   */
+
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organiserId,
+    },
+
+    select: {
+      id: true,
+    },
+  });
+
+  if (!event) {
+    throw new Error("Event not found");
+  }
+
+  /*
+   * Do not allow deletion here if attendees exist.
+   *
+   * The API route also performs this check, but keeping the
+   * protection in the data layer means the rule cannot be
+   * bypassed by another server-side caller.
+   */
+
+  const attendeeCount = await prisma.attendee.count({
+    where: {
+      eventId,
+    },
+  });
+
+  if (attendeeCount > 0) {
+    throw new Error(
+      "This event cannot be deleted because tickets have already been issued. Disable the event instead."
+    );
+  }
+
+  /*
+   * With no attendees, Prisma can safely cascade-delete the
+   * event's ticket types, custom questions and listing fee record
+   * according to the relations in the Prisma schema.
+   */
+
+  await prisma.event.delete({
+    where: {
+      id: event.id,
+    },
+  });
 }

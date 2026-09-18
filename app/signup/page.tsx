@@ -114,7 +114,7 @@ export default function SignupPage() {
           CONTENT
       ===================================================== */}
 
-      <div className="relative mx-auto grid min-h-[calc(100vh-73px)] max-w-7xl items-center gap-16 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:py-20">
+      <div className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-16 px-5 pb-12 pt-28 sm:px-8 sm:pb-16 sm:pt-32 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:pb-20 lg:pt-36">
         {/* ===================================================
             LEFT — BRAND STORY
         =================================================== */}

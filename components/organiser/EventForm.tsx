@@ -18,10 +18,7 @@ import {
 } from "lucide-react";
 
 import Button from "@/components/ui/Button";
-import {
-  NIGERIAN_STATES,
-  EVENT_CATEGORIES,
-} from "@/lib/utils";
+import { EVENT_CATEGORIES } from "@/lib/utils";
 import CoverImageUpload from "@/components/organiser/CoverImageUpload";
 
 interface DraftTicketType {
@@ -37,6 +34,7 @@ interface DraftQuestion {
 export default function EventForm() {
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
+  const [country, setCountry] = useState("Nigeria");
   const [state, setState] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -152,7 +150,7 @@ export default function EventForm() {
         body: JSON.stringify({
           title,
           venue,
-          state,
+          state: state ? `${state}, ${country}` : country,
           date,
           startTime,
           category,
@@ -383,39 +381,71 @@ export default function EventForm() {
             </Field>
 
             <Field
-              label="State"
+              label="Country"
               required
+              icon={<MapPin size={13} />}
+              hint="Events can be created anywhere."
             >
               <div className="relative">
                 <select
                   required
-                  value={state}
-                  onChange={(e) =>
-                    setState(e.target.value)
-                  }
+                  value={country}
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    setState("");
+                  }}
                   className={`${inputClass} appearance-none pr-10`}
                 >
-                  <option
-                    value=""
-                    disabled
-                  >
-                    Select a state
+                  <option value="" disabled>
+                    Select a country
                   </option>
 
-                  {NIGERIAN_STATES.map(
-                    (item) => (
-                      <option
-                        key={item}
-                        value={item}
-                      >
-                        {item}
-                      </option>
-                    )
-                  )}
+                  {COUNTRIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
                 </select>
 
                 <Chevron />
               </div>
+            </Field>
+
+            <Field
+              label={getRegionLabel(country)}
+              required
+              hint="Select a region, state or province."
+            >
+              {getRegions(country).length > 0 ? (
+                <div className="relative">
+                  <select
+                    required
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className={`${inputClass} appearance-none pr-10`}
+                  >
+                    <option value="" disabled>
+                      Select {getRegionLabel(country).toLowerCase()}
+                    </option>
+
+                    {getRegions(country).map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+
+                  <Chevron />
+                </div>
+              ) : (
+                <input
+                  required
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  placeholder={`Enter ${getRegionLabel(country).toLowerCase()}`}
+                  className={inputClass}
+                />
+              )}
             </Field>
 
             <Field
@@ -557,15 +587,82 @@ export default function EventForm() {
 
         <div className="mt-9 space-y-8">
           <Field
-            label="Cover image"
-            hint="Your complete artwork will be preserved — nothing gets cropped."
+            label="Event flyer"
+            required
+            hint="Square flyer required · 1:1 ratio · 500 × 500 px recommended"
           >
-            <CoverImageUpload
-              value={coverImageUrl}
-              onChange={
-                setCoverImageUrl
-              }
-            />
+            <div className="space-y-4">
+              <div className="rounded-[18px] border border-[#7C3AED]/20 bg-[#F8F5FF] px-4 py-4 sm:px-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#7C3AED]/10">
+                    <CheckCircle2
+                      size={15}
+                      className="text-[#7C3AED]"
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#111014]">
+                      Your flyer must be square
+                    </p>
+
+                    <p className="mt-1.5 text-[11px] leading-5 text-black/50">
+                      Upload your flyer in a perfect{" "}
+                      <strong className="font-semibold text-black/65">
+                        1:1 square format
+                      </strong>. We recommend{" "}
+                      <strong className="font-semibold text-black/65">
+                        500 × 500 px
+                      </strong>.
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-bold tracking-[0.04em] text-[#7C3AED] shadow-sm">
+                        1:1 RATIO
+                      </span>
+
+                      <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-bold tracking-[0.04em] text-black/50 shadow-sm">
+                        500 × 500 PX
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-3.5">
+                <AlertCircle
+                  size={15}
+                  className="mt-0.5 shrink-0 text-amber-600"
+                />
+
+                <p className="text-[11px] leading-5 text-amber-800/80">
+                  <strong className="font-semibold text-amber-900">
+                    Important:
+                  </strong>{" "}
+                  If your flyer is not square, it will be{" "}
+                  <strong className="font-semibold text-amber-900">
+                    cropped to fit the square format
+                  </strong>. Important text, logos, faces or other parts of your design may be cut off. Please upload a square flyer to make sure your complete design is displayed.
+                </p>
+              </div>
+
+              <div>
+                <CoverImageUpload
+                  value={coverImageUrl}
+                  onChange={setCoverImageUrl}
+                />
+              </div>
+
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[10px] font-medium text-black/30">
+                  Recommended format
+                </p>
+
+                <p className="text-[10px] font-bold tracking-[0.02em] text-[#7C3AED]">
+                  500 × 500 px · 1:1
+                </p>
+              </div>
+            </div>
           </Field>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -1074,6 +1171,147 @@ export default function EventForm() {
       </div>
     </form>
   );
+}
+
+/* ===============================================================
+   INTERNATIONAL LOCATION DATA
+=============================================================== */
+
+const COUNTRIES = [
+  "Nigeria",
+  "Ghana",
+  "Kenya",
+  "South Africa",
+  "Egypt",
+  "Rwanda",
+  "Tanzania",
+  "Uganda",
+  "Morocco",
+  "Ethiopia",
+  "Senegal",
+  "Côte d'Ivoire",
+  "United Kingdom",
+  "United States",
+  "Canada",
+  "Mexico",
+  "Brazil",
+  "Argentina",
+  "France",
+  "Germany",
+  "Italy",
+  "Spain",
+  "Netherlands",
+  "Belgium",
+  "Switzerland",
+  "Portugal",
+  "Ireland",
+  "Australia",
+  "New Zealand",
+  "United Arab Emirates",
+  "Saudi Arabia",
+  "Qatar",
+  "Kuwait",
+  "India",
+  "Pakistan",
+  "Bangladesh",
+  "Singapore",
+  "Malaysia",
+  "Indonesia",
+  "Japan",
+  "South Korea",
+  "China",
+  "Thailand",
+  "Philippines",
+  "Turkey",
+  "Israel",
+  "Greece",
+  "Austria",
+  "Sweden",
+  "Norway",
+  "Denmark",
+  "Finland",
+  "Poland",
+  "Czech Republic",
+  "Romania",
+  "Hungary",
+  "Ukraine",
+  "Russia",
+  "Other",
+] as const;
+
+const REGIONS: Record<string, string[]> = {
+  Nigeria: [
+    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa",
+    "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo",
+    "Ekiti", "Enugu", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano",
+    "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa",
+    "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
+    "Sokoto", "Taraba", "Yobe", "Zamfara", "Federal Capital Territory",
+  ],
+  Ghana: [
+    "Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern",
+    "Greater Accra", "North East", "Northern", "Oti", "Savannah",
+    "Upper East", "Upper West", "Volta", "Western", "Western North",
+  ],
+  Kenya: [
+    "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet",
+    "Embu", "Garissa", "Homa Bay", "Isiolo", "Kajiado", "Kakamega",
+    "Kericho", "Kiambu", "Kilifi", "Kirinyaga", "Kisii", "Kisumu",
+    "Kitui", "Kwale", "Laikipia", "Lamu", "Machakos", "Makueni",
+    "Mandera", "Marsabit", "Meru", "Migori", "Mombasa", "Murang'a",
+    "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+    "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River",
+    "Tharaka-Nithi", "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga",
+    "Wajir", "West Pokot",
+  ],
+  "South Africa": [
+    "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal",
+    "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape",
+  ],
+  Egypt: [
+    "Cairo", "Alexandria", "Giza", "Qalyubia", "Port Said", "Suez",
+    "Luxor", "Aswan", "Red Sea", "Dakahlia", "Gharbia", "Sharqia",
+    "Faiyum", "Minya", "Assiut", "Sohag", "Qena", "Beheira",
+  ],
+  Rwanda: ["Kigali", "Eastern Province", "Northern Province", "Southern Province", "Western Province"],
+  Tanzania: ["Arusha", "Dar es Salaam", "Dodoma", "Mwanza", "Zanzibar", "Mbeya", "Morogoro", "Tanga"],
+  Uganda: ["Central Region", "Eastern Region", "Northern Region", "Western Region", "Kampala"],
+  Morocco: ["Casablanca-Settat", "Rabat-Salé-Kénitra", "Marrakesh-Safi", "Fès-Meknès", "Tangier-Tetouan-Al Hoceima", "Souss-Massa", "Oriental", "Béni Mellal-Khénifra", "Drâa-Tafilalet", "Guelmim-Oued Noun", "Laâyoune-Sakia El Hamra", "Dakhla-Oued Ed-Dahab"],
+  Ethiopia: ["Addis Ababa", "Afar", "Amhara", "Benishangul-Gumuz", "Dire Dawa", "Gambela", "Harari", "Oromia", "Sidama", "Somali", "SNNPR", "Tigray"],
+  Senegal: ["Dakar", "Diourbel", "Fatick", "Kaffrine", "Kaolack", "Kédougou", "Kolda", "Louga", "Matam", "Saint-Louis", "Sédhiou", "Tambacounda", "Thiès", "Ziguinchor"],
+  "Côte d'Ivoire": ["Abidjan", "Yamoussoukro", "Bas-Sassandra", "Comoé", "Denguélé", "Gôh-Djiboua", "Lacs", "Lagunes", "Montagnes", "Sassandra-Marahoué", "Savanes", "Vallée du Bandama", "Woroba", "Zanzan"],
+  "United Kingdom": ["England", "Scotland", "Wales", "Northern Ireland"],
+  "United States": [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+    "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+    "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+    "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+    "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
+    "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota",
+    "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island",
+    "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah",
+    "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin",
+    "Wyoming", "District of Columbia",
+  ],
+  Canada: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Nova Scotia", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Northwest Territories", "Nunavut", "Yukon"],
+  Australia: ["New South Wales", "Queensland", "South Australia", "Tasmania", "Victoria", "Western Australia", "Australian Capital Territory", "Northern Territory"],
+  "New Zealand": ["Auckland", "Bay of Plenty", "Canterbury", "Gisborne", "Hawke's Bay", "Manawatū-Whanganui", "Marlborough", "Nelson", "Northland", "Otago", "Southland", "Taranaki", "Tasman", "Waikato", "Wellington", "West Coast"],
+  "United Arab Emirates": ["Abu Dhabi", "Ajman", "Dubai", "Fujairah", "Ras Al Khaimah", "Sharjah", "Umm Al Quwain"],
+  "Saudi Arabia": ["Riyadh", "Makkah", "Madinah", "Eastern Province", "Asir", "Tabuk", "Hail", "Northern Borders", "Jazan", "Najran", "Al Bahah", "Al Jawf", "Qassim"],
+  Qatar: ["Doha", "Al Rayyan", "Al Wakrah", "Al Khor", "Umm Salal", "Al Daayen", "Al Shamal", "Al Shahaniya"],
+  India: ["Andhra Pradesh", "Delhi", "Goa", "Gujarat", "Haryana", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal"],
+  Pakistan: ["Balochistan", "Khyber Pakhtunkhwa", "Punjab", "Sindh", "Islamabad Capital Territory"],
+  
+};
+
+function getRegions(country: string): string[] {
+  return REGIONS[country] ?? [];
+}
+
+function getRegionLabel(country: string): string {
+  if (["United Kingdom", "Australia", "New Zealand"].includes(country)) return "Region";
+  if (["United States", "Canada", "Nigeria", "Ghana", "Kenya", "South Africa"].includes(country)) return country === "Canada" ? "Province / Territory" : "State / Province";
+  return "State / Province / Region";
 }
 
 /* ===============================================================

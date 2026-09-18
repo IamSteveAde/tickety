@@ -4,49 +4,36 @@ import HeroConversation from "./HeroConversation";
 export default function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-white">
-      {/* Background */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        {/* Soft glow */}
-        <div className="absolute left-1/2 top-[-220px] h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-violet-100/60 blur-3xl" />
+      {/* =========================================================
+          BACKGROUND
+      ========================================================= */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        {/* Very subtle top atmosphere */}
+        <div className="absolute left-1/2 top-[-260px] h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-violet-100/35 blur-[110px]" />
 
-        {/* Grid */}
-        <div
-          className="absolute inset-0 opacity-[0.32]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(124,58,237,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(124,58,237,0.07) 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-            maskImage:
-              "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-          }}
-        />
+        {/* Single quiet architectural arc */}
+        <div className="absolute left-1/2 top-[110px] h-[720px] w-[720px] -translate-x-1/2 rounded-full border border-violet-200/30" />
 
-        {/* Decorative rings */}
-        <div className="absolute left-1/2 top-[80px] h-[700px] w-[700px] -translate-x-1/2 rounded-full border border-violet-200/50" />
-        <div className="absolute left-1/2 top-[145px] h-[570px] w-[570px] -translate-x-1/2 rounded-full border border-violet-200/40" />
-        <div className="absolute left-1/2 top-[215px] h-[430px] w-[430px] -translate-x-1/2 rounded-full border border-violet-200/30" />
-
-        {/* Small decorative dots */}
-        <div className="absolute left-[8%] top-[26%] h-2 w-2 rounded-full bg-violet-300" />
-        <div className="absolute right-[10%] top-[22%] h-1.5 w-1.5 rounded-full bg-violet-300" />
-        <div className="absolute right-[18%] bottom-[24%] h-2 w-2 rounded-full bg-violet-200" />
-        <div className="absolute left-[17%] bottom-[20%] h-1.5 w-1.5 rounded-full bg-violet-200" />
+        {/* Subtle fade toward the bottom */}
+        <div className="absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-white via-white/70 to-transparent" />
       </div>
 
-      {/* Main hero content */}
+      {/* =========================================================
+          MAIN HERO
+      ========================================================= */}
       <div className="mx-auto max-w-7xl px-6 pb-20 pt-28 sm:px-8 sm:pb-24 sm:pt-32 lg:px-10 lg:pb-28 lg:pt-36">
         <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,0.95fr)_minmax(460px,0.8fr)] lg:gap-8">
-          {/* LEFT */}
+          {/* =====================================================
+              LEFT
+          ===================================================== */}
           <div className="relative z-10 max-w-3xl">
             {/* Eyebrow */}
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-3.5 py-2 text-sm font-medium text-violet-700 shadow-sm backdrop-blur">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-500" />
-              </span>
-              Events worth showing up for
+            <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-violet-200/80 bg-violet-50/70 px-3.5 py-2 text-sm font-medium text-violet-700">
+              <span className="h-2 w-2 rounded-full bg-violet-500" />
+              <span>Events worth showing up for</span>
             </div>
 
             {/* Heading */}
@@ -85,9 +72,10 @@ export default function Hero() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/explore"
-                className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-zinc-950 px-7 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(24,24,27,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-violet-600 hover:shadow-[0_16px_35px_rgba(124,58,237,0.25)]"
+                className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-zinc-950 px-7 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(24,24,27,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-violet-600 hover:shadow-[0_16px_35px_rgba(124,58,237,0.2)]"
               >
                 Explore events
+
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 20 20"
@@ -106,7 +94,7 @@ export default function Hero() {
 
               <Link
                 href="/organiser/events/new"
-                className="inline-flex h-14 items-center justify-center rounded-full border border-zinc-200 bg-white/80 px-7 text-sm font-semibold text-zinc-800 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white"
+                className="inline-flex h-14 items-center justify-center rounded-full border border-zinc-200 bg-white px-7 text-sm font-semibold text-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50"
               >
                 Create an event
               </Link>
@@ -137,34 +125,39 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* RIGHT — FLOATING CONVERSATION */}
+          {/* =====================================================
+              RIGHT — CONVERSATION
+          ===================================================== */}
           <div className="relative min-h-[520px] lg:min-h-[590px]">
-            {/* Ambient glow behind conversation */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-100/70 blur-3xl" />
+            {/* Quiet glow directly behind the product visual */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-100/45 blur-[90px]"
+            />
 
-            {/* Floating decorative elements */}
-            <div className="pointer-events-none absolute right-[5%] top-[4%] hidden rotate-6 rounded-2xl border border-zinc-200/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur sm:block">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-xs font-semibold text-zinc-600">
-                  Live events
-                </span>
-              </div>
+            {/* Small contextual label */}
+            <div className="pointer-events-none absolute right-[4%] top-[5%] hidden rotate-3 items-center gap-2 rounded-xl border border-zinc-200/70 bg-white px-3.5 py-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.05)] sm:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+
+              <span className="text-[10px] font-semibold text-zinc-500">
+                Live events
+              </span>
             </div>
 
-            <div className="pointer-events-none absolute bottom-[8%] left-[2%] hidden -rotate-6 rounded-2xl border border-zinc-200/80 bg-white/80 px-4 py-3 shadow-sm backdrop-blur sm:block">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-100 text-xs text-violet-600">
-                  ✓
-                </div>
-                <div>
-                  <p className="text-[10px] font-medium text-zinc-400">
-                    Ticket secured
-                  </p>
-                  <p className="text-xs font-semibold text-zinc-700">
-                    You&apos;re going 🎉
-                  </p>
-                </div>
+            {/* Small ticket confirmation */}
+            <div className="pointer-events-none absolute bottom-[7%] left-[1%] hidden -rotate-3 items-center gap-2.5 rounded-xl border border-zinc-200/70 bg-white px-3.5 py-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.05)] sm:flex">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-50 text-xs text-violet-600">
+                ✓
+              </div>
+
+              <div>
+                <p className="text-[9px] font-medium text-zinc-400">
+                  Ticket secured
+                </p>
+
+                <p className="text-[11px] font-semibold text-zinc-700">
+                  You&apos;re going
+                </p>
               </div>
             </div>
 

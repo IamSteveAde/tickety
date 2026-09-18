@@ -37,13 +37,58 @@ export default function CoverImageUpload({
 
     setError("");
 
-    const localPreview =
-      URL.createObjectURL(file);
+    // Tickety event artwork must be square (1:1).
+    // Validate the actual image dimensions before uploading so
+    // portrait/landscape artwork can never reach the server.
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      e.target.value = "";
+      return;
+    }
 
-    setPreviewUrl(localPreview);
-    setUploading(true);
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image is too large. Please upload an image under 5MB.");
+      e.target.value = "";
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(file);
 
     try {
+      const dimensions = await new Promise<{
+        width: number;
+        height: number;
+      }>((resolve, reject) => {
+        const image = new Image();
+
+        image.onload = () => {
+          resolve({
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+          });
+          URL.revokeObjectURL(imageUrl);
+        };
+
+        image.onerror = () => {
+          URL.revokeObjectURL(imageUrl);
+          reject(new Error("We couldn't read this image. Please try another file."));
+        };
+
+        image.src = imageUrl;
+      });
+
+      if (dimensions.width !== dimensions.height) {
+        setError(
+          `Your flyer must be square (1:1). This image is ${dimensions.width} × ${dimensions.height}px. Please upload a square flyer, such as 500 × 500px.`
+        );
+        e.target.value = "";
+        return;
+      }
+
+      const localPreview = URL.createObjectURL(file);
+      setPreviewUrl(localPreview);
+      setUploading(true);
+
       const formData = new FormData();
 
       formData.append("file", file);
@@ -128,11 +173,11 @@ export default function CoverImageUpload({
 
               <div>
                 <p className="text-[10px] font-semibold text-white">
-                  Cover image
+                  Event flyer
                 </p>
 
                 <p className="mt-0.5 text-[8px] text-white/30">
-                  Full artwork preview
+                  1:1 square artwork
                 </p>
               </div>
             </div>
@@ -176,7 +221,7 @@ export default function CoverImageUpload({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={displayUrl}
-              alt="Cover preview"
+              alt="Event flyer preview"
               className="relative z-10 block h-auto max-h-[520px] w-auto max-w-full object-contain object-center drop-shadow-[0_25px_45px_rgba(0,0,0,0.4)]"
             />
 
@@ -214,7 +259,7 @@ export default function CoverImageUpload({
               />
 
               <p className="text-[9px] text-white/35">
-                Your entire image is preserved.
+                Square flyer · 1:1 · 500 × 500px recommended
               </p>
             </div>
 
@@ -266,8 +311,8 @@ export default function CoverImageUpload({
             </p>
 
             <p className="mx-auto mt-2 max-w-xs text-xs leading-5 text-black/40">
-              Upload the poster or cover image attendees
-              will see when discovering your event.
+              Upload a square flyer for your event.
+              Your artwork must be 1:1 to display correctly.
             </p>
           </div>
 
@@ -286,8 +331,8 @@ export default function CoverImageUpload({
             </span>
           </div>
 
-          <p className="relative mt-3 text-[9px] text-black/25">
-            Maximum file size · 5MB
+          <p className="relative mt-3 text-[9px] font-medium text-black/30">
+            1:1 square required · 500 × 500px recommended · Maximum 5MB
           </p>
         </button>
       )}

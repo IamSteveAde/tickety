@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
+import SiteNavigation from "@/components/layout/SiteNavigation";
 import Footer from "@/components/layout/Footer";
 import AuthSessionProvider from "@/components/providers/SessionProvider";
 
@@ -13,7 +13,7 @@ const display = Space_Grotesk({
 
 const body = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600"],  
   variable: "--font-body",
 });
 
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="flex min-h-screen flex-col font-body">
         <AuthSessionProvider>
-          <Navbar />
+         <SiteNavigation />
           <main className="flex-1">{children}</main>
           <Footer />
         </AuthSessionProvider>
