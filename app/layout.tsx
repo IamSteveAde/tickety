@@ -9,12 +9,14 @@ const display = Space_Grotesk({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   variable: "--font-display",
+  display: "swap",
 });
 
 const body = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],  
+  weight: ["400", "500", "600"],
   variable: "--font-body",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -23,13 +25,24 @@ export const metadata: Metadata = {
     "Discover events on the web. Get your ticket, receipt, and QR code in a WhatsApp chat.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html
+      lang="en"
+      className={`${display.variable} ${body.variable}`}
+    >
       <body className="flex min-h-screen flex-col font-body">
         <AuthSessionProvider>
-         <SiteNavigation />
-          <main className="flex-1">{children}</main>
+          <SiteNavigation />
+
+          <main className="flex-1">
+            {children}
+          </main>
+
           <Footer />
         </AuthSessionProvider>
       </body>

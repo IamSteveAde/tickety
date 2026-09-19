@@ -1,43 +1,49 @@
 import Link from "next/link";
+import { ArrowUpRight, ArrowRight, Check, CircleArrowOutUpRight, Radio } from "lucide-react";
 import HeroConversation from "./HeroConversation";
 
 export default function Hero() {
   return (
-    <section className="relative isolate overflow-hidden bg-white">
+    <section className="relative isolate overflow-hidden bg-[#fcfbff]">
       {/* =========================================================
-          BACKGROUND
+          EDITORIAL BACKDROP
       ========================================================= */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       >
-        {/* Very subtle top atmosphere */}
-        <div className="absolute left-1/2 top-[-260px] h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-violet-100/35 blur-[110px]" />
+        {/* Soft violet atmosphere */}
+        <div className="absolute left-[46%] top-[-280px] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-violet-100/50 blur-[120px]" />
 
-        {/* Single quiet architectural arc */}
-        <div className="absolute left-1/2 top-[110px] h-[720px] w-[720px] -translate-x-1/2 rounded-full border border-violet-200/30" />
+        {/* Large architectural curve */}
+        <div className="absolute left-[58%] top-[70px] h-[820px] w-[820px] -translate-x-1/2 rounded-full border border-violet-200/45" />
 
-        {/* Subtle fade toward the bottom */}
-        <div className="absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-white via-white/70 to-transparent" />
+        <div className="absolute left-[58%] top-[140px] h-[680px] w-[680px] -translate-x-1/2 rounded-full border border-zinc-200/60" />
+
+        {/* Quiet bottom fade */}
+        <div className="absolute inset-x-0 bottom-0 h-[30%] bg-gradient-to-t from-[#fcfbff] to-transparent" />
       </div>
 
       {/* =========================================================
-          MAIN HERO
+          HERO
       ========================================================= */}
-      <div className="mx-auto max-w-7xl px-6 pb-20 pt-28 sm:px-8 sm:pb-24 sm:pt-32 lg:px-10 lg:pb-28 lg:pt-36">
-        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,0.95fr)_minmax(460px,0.8fr)] lg:gap-8">
+      <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-28 sm:px-8 sm:pb-20 sm:pt-32 lg:px-12 lg:pb-24 lg:pt-36">
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(500px,0.9fr)] lg:gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(560px,0.9fr)]">
           {/* =====================================================
-              LEFT
+              LEFT — EDITORIAL COPY
           ===================================================== */}
-          <div className="relative z-10 max-w-3xl">
+          <div className="relative z-10 max-w-[720px]">
             {/* Eyebrow */}
-            <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-violet-200/80 bg-violet-50/70 px-3.5 py-2 text-sm font-medium text-violet-700">
-              <span className="h-2 w-2 rounded-full bg-violet-500" />
-              <span>Events worth showing up for</span>
+            <div className="mb-8 flex items-center gap-3">
+              <span className="h-px w-8 bg-violet-500" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-700">
+                The new way to go out
+              </span>
             </div>
 
             {/* Heading */}
-            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.98] tracking-[-0.055em] text-zinc-950 sm:text-6xl md:text-7xl lg:text-[5.6rem]">
+            <h1 className="max-w-[760px] text-[2.7rem] font-semibold leading-[0.91] tracking-[-0.065em] text-zinc-950 sm:text-[4.2rem] md:text-[4rem] lg:text-[4.35rem] xl:text-[4rem]">
               Find something
               <br />
               worth{" "}
@@ -46,7 +52,7 @@ export default function Hero() {
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 260 18"
-                  className="absolute -bottom-1 left-0 h-3 w-full"
+                  className="absolute -bottom-1 left-0 h-3 w-full sm:-bottom-2 sm:h-3.5"
                   fill="none"
                   preserveAspectRatio="none"
                 >
@@ -57,110 +63,122 @@ export default function Hero() {
                     strokeLinecap="round"
                   />
                 </svg>
-              </span>{" "}
+              </span>
+              <br />
               for.
             </h1>
 
             {/* Description */}
-            <p className="mt-8 max-w-xl text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8">
-              Discover events on Tickety. Choose what you want, start a
-              conversation and get your ticket without the usual checkout
-              hassle.
+            <p className="mt-8 max-w-[570px] text-[15px] font-medium leading-7 tracking-[-0.015em] text-zinc-500 sm:mt-9 sm:text-[17px] sm:leading-8">
+              Discover what&apos;s happening around you, choose your moment,
+              and get your ticket without the usual checkout friction.
             </p>
 
-            {/* CTAs */}
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            {/* CTA row */}
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/explore"
-                className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-zinc-950 px-7 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(24,24,27,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-violet-600 hover:shadow-[0_16px_35px_rgba(124,58,237,0.2)]"
+                className="group inline-flex h-[58px] items-center justify-center gap-3 rounded-[18px] bg-zinc-950 px-7 text-[13px] font-semibold tracking-[-0.01em] text-white shadow-[0_18px_45px_rgba(24,24,27,0.14)] transition-all duration-300 hover:-translate-y-1 hover:bg-violet-600 hover:shadow-[0_20px_45px_rgba(124,58,237,0.22)]"
               >
                 Explore events
-
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                >
-                  <path
-                    d="M4 10h11M11 5l5 5-5 5"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:bg-white/15">
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5"
+                    strokeWidth={1.8}
                   />
-                </svg>
+                </span>
               </Link>
 
               <Link
                 href="/organiser/events/new"
-                className="inline-flex h-14 items-center justify-center rounded-full border border-zinc-200 bg-white px-7 text-sm font-semibold text-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50"
+                className="group inline-flex h-[58px] items-center justify-center gap-2 rounded-[18px] border border-zinc-200 bg-white/80 px-7 text-[13px] font-semibold tracking-[-0.01em] text-zinc-800 transition-all duration-300 hover:-translate-y-1 hover:border-zinc-300 hover:bg-white"
               >
                 Create an event
+                <span className="text-zinc-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-violet-500">
+                  <ArrowUpRight aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
+                </span>
               </Link>
             </div>
 
-            {/* Trust points */}
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium text-zinc-500">
-              <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-600">
-                  ✓
-                </span>
-                Discover faster
-              </div>
+            {/* Trust / product promise */}
+            <div className="mt-11 flex flex-wrap items-center gap-x-7 gap-y-4">
+              {[
+                "Discover faster",
+                "Simple checkout",
+                "Instant tickets",
+              ].map((item, index) => (
+                <div key={item} className="flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-600">
+                    <Check aria-hidden="true" className="h-3 w-3" strokeWidth={2.5} />
+                  </span>
 
-              <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-600">
-                  ✓
-                </span>
-                Simple checkout
-              </div>
+                  <span className="text-[11px] font-semibold tracking-[-0.01em] text-zinc-500">
+                    {item}
+                  </span>
 
-              <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-600">
-                  ✓
-                </span>
-                Instant tickets
-              </div>
+                  {index < 2 && (
+                    <span className="ml-4 hidden h-3 w-px bg-zinc-200 sm:block" />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Small editorial index */}
+            <div className="mt-12 hidden items-center gap-4 lg:flex">
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-300">
+                01
+              </span>
+              <span className="h-px w-12 bg-zinc-200" />
+              <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                Discover · Choose · Go
+              </span>
             </div>
           </div>
 
           {/* =====================================================
-              RIGHT — CONVERSATION
+              RIGHT — CONVERSATION / PRODUCT MOMENT
           ===================================================== */}
-          <div className="relative min-h-[520px] lg:min-h-[590px]">
-            {/* Quiet glow directly behind the product visual */}
+          <div className="relative min-h-[540px] lg:min-h-[600px]">
+            {/* Visual stage */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-100/45 blur-[90px]"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-100/50 blur-[95px]"
             />
 
-            {/* Small contextual label */}
-            <div className="pointer-events-none absolute right-[4%] top-[5%] hidden rotate-3 items-center gap-2 rounded-xl border border-zinc-200/70 bg-white px-3.5 py-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.05)] sm:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-
-              <span className="text-[10px] font-semibold text-zinc-500">
-                Live events
+            {/* Floating status */}
+            <div className="pointer-events-none absolute right-[2%] top-[3%] z-20 hidden rotate-2 items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 shadow-[0_14px_40px_rgba(24,24,27,0.07)] sm:flex">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <Radio aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
               </span>
+
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-400">
+                  Happening now
+                </p>
+                <p className="mt-0.5 text-[11px] font-semibold tracking-[-0.02em] text-zinc-800">
+                  Events in Lagos
+                </p>
+              </div>
             </div>
 
-            {/* Small ticket confirmation */}
-            <div className="pointer-events-none absolute bottom-[7%] left-[1%] hidden -rotate-3 items-center gap-2.5 rounded-xl border border-zinc-200/70 bg-white px-3.5 py-2.5 shadow-[0_8px_25px_rgba(0,0,0,0.05)] sm:flex">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-50 text-xs text-violet-600">
-                ✓
+            {/* Floating ticket status */}
+            <div className="pointer-events-none absolute bottom-[5%] left-[0%] z-20 hidden -rotate-3 items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 shadow-[0_14px_40px_rgba(24,24,27,0.07)] sm:flex">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600 text-white">
+                <Check aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
               </div>
 
               <div>
-                <p className="text-[9px] font-medium text-zinc-400">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-400">
                   Ticket secured
                 </p>
-
-                <p className="text-[11px] font-semibold text-zinc-700">
+                <p className="mt-0.5 text-[11px] font-semibold tracking-[-0.02em] text-zinc-800">
                   You&apos;re going
                 </p>
               </div>
             </div>
 
+            {/* Conversation */}
             <HeroConversation />
           </div>
         </div>

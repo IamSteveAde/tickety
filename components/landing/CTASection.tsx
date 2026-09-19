@@ -142,7 +142,7 @@ export default function CTASection() {
                   href="/organiser/events/new"
                   size="lg"
                   icon={<ArrowUpRight size={18} />}
-                  className="relative h-14 w-full rounded-[18px] bg-white px-6 font-semibold text-black shadow-[0_18px_50px_rgba(255,255,255,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_24px_65px_rgba(255,255,255,0.16)]"
+                  className="relative h-14 w-full rounded-[18px] bg-white px-6 font-semibold text-[#000] shadow-[0_18px_50px_rgba(255,255,255,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_24px_65px_rgba(255,255,255,0.16)]"
                 >
                   Create your event
                 </Button>

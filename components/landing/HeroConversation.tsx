@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { Sora } from "next/font/google";
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+  display: "swap",
+});
 
 type BubbleProps = {
   children: ReactNode;
@@ -66,12 +73,12 @@ function TicketyBubble({
           T
         </div>
 
-        <span className="text-[11px] font-semibold tracking-wide text-zinc-400">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
           TICKETY
         </span>
       </div>
 
-      <div className="text-sm leading-6 text-zinc-700">{children}</div>
+      <div className="text-[13px] font-medium leading-[1.7] tracking-[-0.01em] text-zinc-700">{children}</div>
     </Bubble>
   );
 }
@@ -80,7 +87,7 @@ function UserBubble({ children }: { children: ReactNode }) {
   return (
     <Bubble
       side="right"
-      className="rounded-[24px] rounded-tr-[7px] bg-zinc-950 px-5 py-4 text-sm leading-6 text-white shadow-[0_18px_45px_rgba(24,24,27,0.16)]"
+      className="rounded-[24px] rounded-tr-[7px] bg-zinc-950 px-5 py-4 text-[13px] font-medium leading-[1.7] tracking-[-0.01em] text-white shadow-[0_18px_45px_rgba(24,24,27,0.16)]"
     >
       {children}
     </Bubble>
@@ -129,11 +136,11 @@ function MiniTicket() {
         </div>
 
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-zinc-800">
+          <p className="truncate text-[12px] font-semibold tracking-[-0.02em] text-zinc-800">
             The Experience
           </p>
 
-          <p className="mt-0.5 text-[10px] text-zinc-500">
+          <p className="mt-0.5 text-[10px] font-medium tracking-[-0.01em] text-zinc-500">
             VIP · 2 tickets
           </p>
         </div>
@@ -187,11 +194,14 @@ export default function HeroConversation() {
   }, [step]);
 
   return (
-<div className="absolute inset-x-0 top-1/2 mx-auto w-full max-w-[520px] -translate-y-[44%] px-3 sm:px-6">
+<div
+      className={`${sora.variable} absolute inset-x-0 top-1/2 mx-auto w-full max-w-[520px] -translate-y-[44%] px-3 sm:px-6`}
+      style={{ fontFamily: "var(--font-sora)" }}
+    >
       {/* =========================================================
           CONTEXT LABEL
       ========================================================= */}
-      <div className="mb-5 ml-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400 sm:mb-6 sm:ml-8">
+      <div className="mb-5 ml-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400 sm:mb-6 sm:ml-8">
         <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
 
         <span>A better way to get your ticket</span>
@@ -229,11 +239,11 @@ export default function HeroConversation() {
               </p>
 
               <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2.5">
-                <p className="text-xs font-semibold text-zinc-800">
+                <p className="text-[12px] font-semibold tracking-[-0.02em] text-zinc-800">
                   The Experience
                 </p>
 
-                <p className="mt-0.5 text-[11px] text-zinc-500">
+                <p className="mt-0.5 text-[10px] font-medium tracking-[-0.01em] text-zinc-500">
                   Saturday · Lagos
                 </p>
               </div>
@@ -269,23 +279,23 @@ export default function HeroConversation() {
             <TicketyBubble>
               <p>
                 Perfect.{" "}
-                <span className="font-semibold text-zinc-900">
+                <span className="font-semibold tracking-[-0.025em] text-zinc-900">
                   2 × VIP = ₦30,000.
                 </span>
               </p>
 
               <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-violet-50 px-3.5 py-3">
                 <div>
-                  <p className="text-[10px] font-medium text-violet-500">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-500">
                     Total
                   </p>
 
-                  <p className="text-sm font-bold text-zinc-900">
+                  <p className="text-[15px] font-bold tracking-[-0.03em] text-zinc-900">
                     ₦30,000
                   </p>
                 </div>
 
-                <div className="shrink-0 rounded-full bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white">
+                <div className="shrink-0 rounded-full bg-violet-600 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.04em] text-white">
                   Pay securely
                 </div>
               </div>
@@ -308,11 +318,11 @@ export default function HeroConversation() {
         {step >= 5 && (
           <div className="absolute left-0 top-[390px] w-[92%] sm:left-[5%] sm:w-[72%]">
             <TicketyBubble>
-              <p className="font-semibold text-zinc-900">
+              <p className="font-semibold tracking-[-0.025em] text-zinc-900">
                 ✓ You&apos;re all set 🎉
               </p>
 
-              <p className="mt-1 text-zinc-500">
+              <p className="mt-1 text-[12px] font-medium leading-5 tracking-[-0.01em] text-zinc-500">
                 Your tickets are ready.
               </p>
 
