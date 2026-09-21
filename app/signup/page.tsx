@@ -84,12 +84,12 @@ export default function SignupPage() {
 
   return (
     <main className="min-h-[calc(100vh-73px)] bg-[#08070B]">
-      <div className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl lg:grid-cols-[1fr_460px] lg:gap-20 lg:px-10">
+  <div className="mx-auto grid max-w-6xl lg:grid-cols-[1fr_460px] lg:gap-20 lg:px-10">
         {/* =========================================================
             DESKTOP BRAND MESSAGE
         ========================================================= */}
 
-        <section className="hidden lg:flex lg:items-center">
+       <section className="hidden lg:flex lg:items-start lg:pt-[132px]">
           <div className="max-w-xl">
             <div className="mb-7 flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" />
@@ -129,7 +129,7 @@ export default function SignupPage() {
             SIGNUP AREA
         ========================================================= */}
 
-        <section className="flex min-h-[calc(100vh-73px)] items-center px-5 py-10 sm:px-8 lg:px-0">
+       <section className="flex items-start px-5 pb-12 pt-[124px] sm:px-8 sm:pb-16 sm:pt-[132px] lg:px-0 lg:pt-[132px]">
           <div className="mx-auto w-full max-w-[460px]">
             {/* Mobile brand */}
 

@@ -110,7 +110,7 @@ export default function LoginForm() {
             LOGIN AREA
         ========================================================= */}
 
-        <section className="flex min-h-[calc(100vh-73px)] items-center px-5 py-10 sm:px-8 lg:px-0">
+        <section className="flex items-start px-5 pb-12 pt-[124px] sm:px-8 sm:pb-16 sm:pt-[132px] lg:px-0 lg:pt-[132px]">
           <div className="mx-auto w-full max-w-[460px]">
             {/* Mobile brand */}
 
