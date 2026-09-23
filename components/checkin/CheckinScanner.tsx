@@ -6,7 +6,6 @@ import {
   AlertCircle,
   Camera,
   CheckCircle2,
-  ChevronDown,
   Loader2,
   RefreshCw,
   ScanLine,
@@ -15,12 +14,6 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-
-type EventOption = {
-  id: string;
-  title: string;
-  date: string;
-};
 
 type Result = {
   success: boolean;
@@ -36,21 +29,19 @@ type Result = {
   };
 };
 
-export default function CheckInScanner({
-  events,
-}: {
-  events: EventOption[];
-}) {
-  const scannerRef = useRef<HTMLDivElement>(null);
+type CheckInScannerProps = {
+  eventId: string;
+};
 
-  // IMPORTANT:
-  // Use the real html5-qrcode type instead of a custom interface.
+export default function CheckInScanner({
+  eventId,
+}: CheckInScannerProps) {
+  const scannerRef = useRef<HTMLDivElement>(null);
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
 
   const lastScanRef = useRef("");
   const startingScannerRef = useRef(false);
 
-  const [eventId, setEventId] = useState(events[0]?.id ?? "");
   const [ticketNumber, setTicketNumber] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerLoading, setScannerLoading] = useState(false);
@@ -58,9 +49,10 @@ export default function CheckInScanner({
   const [result, setResult] = useState<Result | null>(null);
   const [cameraError, setCameraError] = useState("");
 
-  const selectedEvent = events.find((event) => event.id === eventId);
-
-  async function checkIn(value: string, method: "qr" | "ticket") {
+  async function checkIn(
+    value: string,
+    method: "qr" | "ticket"
+  ) {
     const cleanValue = value.trim();
 
     if (!cleanValue || !eventId || submitting) {
@@ -71,17 +63,20 @@ export default function CheckInScanner({
     setResult(null);
 
     try {
-      const response = await fetch("/api/organiser/check-in", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventId,
-          method,
-          value: cleanValue,
-        }),
-      });
+      const response = await fetch(
+        "/api/organiser/check-in",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventId,
+            method,
+            value: cleanValue,
+          }),
+        }
+      );
 
       let data: Result;
 
@@ -132,12 +127,14 @@ export default function CheckInScanner({
     try {
       /*
        * -----------------------------------------------------------
-       * CHECK BROWSER CAMERA SUPPORT
+       * CHECK CAMERA SUPPORT
        * -----------------------------------------------------------
        */
 
       if (typeof window === "undefined") {
-        throw new Error("Camera can only be used in a browser.");
+        throw new Error(
+          "Camera can only be used in a browser."
+        );
       }
 
       if (!window.isSecureContext) {
@@ -154,10 +151,7 @@ export default function CheckInScanner({
 
       /*
        * -----------------------------------------------------------
-       * REQUEST CAMERA PERMISSION EXPLICITLY
-       *
-       * This is important on mobile browsers because it forces the
-       * browser permission prompt before html5-qrcode starts.
+       * REQUEST CAMERA PERMISSION
        * -----------------------------------------------------------
        */
 
@@ -174,10 +168,13 @@ export default function CheckInScanner({
             audio: false,
           });
       } catch (error) {
-        console.error("Camera permission error:", error);
+        console.error(
+          "Camera permission error:",
+          error
+        );
 
         throw new Error(
-          "Camera access was denied or unavailable. Allow camera access for this site in your browser settings and try again."
+          "Camera access was denied or unavailable."
         );
       } finally {
         if (permissionStream) {
@@ -189,15 +186,16 @@ export default function CheckInScanner({
 
       /*
        * -----------------------------------------------------------
-       * DYNAMICALLY LOAD HTML5-QRCODE
+       * LOAD HTML5-QRCODE
        * -----------------------------------------------------------
        */
 
-      const { Html5Qrcode } = await import("html5-qrcode");
+      const { Html5Qrcode } = await import(
+        "html5-qrcode"
+      );
 
       /*
-       * The scanner container is conditionally rendered, so give
-       * React a moment to mount it before html5-qrcode accesses it.
+       * Give React time to mount the scanner container.
        */
 
       await new Promise<void>((resolve) => {
@@ -211,7 +209,7 @@ export default function CheckInScanner({
       }
 
       /*
-       * Make sure a previous scanner is completely stopped.
+       * Clean up any previous scanner.
        */
 
       if (qrScannerRef.current) {
@@ -236,16 +234,15 @@ export default function CheckInScanner({
        * -----------------------------------------------------------
        */
 
-      const scanner = new Html5Qrcode("tickety-qr-reader");
+      const scanner = new Html5Qrcode(
+        "tickety-qr-reader"
+      );
 
       qrScannerRef.current = scanner;
 
       /*
        * -----------------------------------------------------------
-       * FIND AVAILABLE CAMERAS
-       *
-       * Using an actual camera ID is more reliable on mobile than
-       * passing only { facingMode: "environment" }.
+       * FIND CAMERAS
        * -----------------------------------------------------------
        */
 
@@ -259,12 +256,6 @@ export default function CheckInScanner({
 
       /*
        * Prefer the rear camera.
-       *
-       * Camera labels can vary between:
-       * - back
-       * - rear
-       * - environment
-       * - wide
        */
 
       const rearCamera =
@@ -307,10 +298,6 @@ export default function CheckInScanner({
 
           lastScanRef.current = normalized;
 
-          /*
-           * Stop the camera before processing the ticket.
-           */
-
           await stopScanner();
 
           await checkIn(normalized, "qr");
@@ -321,14 +308,14 @@ export default function CheckInScanner({
         },
         () => {
           /*
-           * html5-qrcode calls this repeatedly while it is looking
-           * for a QR code. We intentionally do nothing here.
+           * html5-qrcode continuously calls this while it
+           * searches for a QR code. Ignore those failures.
            */
         }
       );
 
       /*
-       * Prevent a broken camera from leaving the UI stuck forever.
+       * Don't allow the UI to remain stuck indefinitely.
        */
 
       await Promise.race([
@@ -344,26 +331,43 @@ export default function CheckInScanner({
         }),
       ]);
     } catch (error) {
-      console.error("QR scanner failed to start:", error);
+      console.error(
+        "QR scanner failed to start:",
+        error
+      );
 
       const message =
         error instanceof Error
           ? error.message
-          : "Camera access couldn't be started.";
+          : "";
 
-      setCameraError(
+      if (
         message.includes("secure connection")
-          ? "Camera access requires HTTPS. Open Tickety using its secure HTTPS address."
-          : message.includes("No camera")
-            ? "No camera was detected on this device."
-            : message.includes("denied") ||
-                message.includes("permission")
-              ? "Camera access was denied. Allow camera access for Tickety in your browser settings, then try again."
-              : "Camera access couldn't be started. Allow camera access in your browser, or enter the ticket number manually."
-      );
+      ) {
+        setCameraError(
+          "Camera access requires HTTPS. Open Tickety using its secure HTTPS address."
+        );
+      } else if (
+        message.includes("No camera")
+      ) {
+        setCameraError(
+          "No camera was detected on this device."
+        );
+      } else if (
+        message.includes("denied") ||
+        message.includes("permission")
+      ) {
+        setCameraError(
+          "Camera access was denied. Allow camera access for Tickety in your browser settings, then try again."
+        );
+      } else {
+        setCameraError(
+          "Camera access couldn't be started. Allow camera access in your browser, or enter the ticket number manually."
+        );
+      }
 
       /*
-       * Clean up any partially initialized scanner.
+       * Clean up partially initialized scanner.
        */
 
       const scanner = qrScannerRef.current;
@@ -398,6 +402,7 @@ export default function CheckInScanner({
 
     setScannerOpen(false);
     setScannerLoading(false);
+
     startingScannerRef.current = false;
 
     if (!scanner) {
@@ -419,7 +424,7 @@ export default function CheckInScanner({
 
   /*
    * ---------------------------------------------------------------
-   * CLEANUP WHEN COMPONENT UNMOUNTS
+   * COMPONENT CLEANUP
    * ---------------------------------------------------------------
    */
 
@@ -463,12 +468,12 @@ export default function CheckInScanner({
       void stopScanner();
     }
 
-    // stopScanner is intentionally excluded because this effect
-    // should only react to eventId changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
-  function formatCheckInTime(value?: string | null) {
+  function formatCheckInTime(
+    value?: string | null
+  ) {
     if (!value) {
       return "Just now";
     }
@@ -522,7 +527,6 @@ export default function CheckInScanner({
             <div className="flex items-center gap-2 rounded-full border border-[#25D366]/10 bg-[#25D366]/[0.05] px-2.5 py-1.5">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#25D366]/40" />
-
                 <span className="relative h-1.5 w-1.5 rounded-full bg-[#25D366]" />
               </span>
 
@@ -530,53 +534,6 @@ export default function CheckInScanner({
                 Ready
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Event selector */}
-
-        <div className="border-b border-white/[0.07] px-5 py-5 sm:px-7">
-          <label
-            htmlFor="tickety-event"
-            className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/30"
-          >
-            Event
-          </label>
-
-          <div className="relative mt-2">
-            <select
-              id="tickety-event"
-              value={eventId}
-              onChange={(event) =>
-                setEventId(event.target.value)
-              }
-              disabled={events.length === 0}
-              className="h-12 w-full appearance-none rounded-[14px] border border-white/10 bg-white/[0.045] px-4 pr-10 text-sm font-medium text-white outline-none transition focus:border-[#8B5CF6]/50 focus:bg-white/[0.065] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {events.length === 0 ? (
-                <option
-                  value=""
-                  className="bg-[#111014]"
-                >
-                  No events available
-                </option>
-              ) : (
-                events.map((event) => (
-                  <option
-                    key={event.id}
-                    value={event.id}
-                    className="bg-[#111014]"
-                  >
-                    {event.title}
-                  </option>
-                ))
-              )}
-            </select>
-
-            <ChevronDown
-              size={15}
-              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/30"
-            />
           </div>
         </div>
 
@@ -612,7 +569,9 @@ export default function CheckInScanner({
 
               <button
                 type="button"
-                onClick={() => void stopScanner()}
+                onClick={() =>
+                  void stopScanner()
+                }
                 className="absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white/70 backdrop-blur-md transition hover:bg-black/80 hover:text-white"
                 aria-label="Close scanner"
               >
@@ -622,10 +581,11 @@ export default function CheckInScanner({
           ) : (
             <button
               type="button"
-              onClick={() => void startScanner()}
+              onClick={() =>
+                void startScanner()
+              }
               disabled={
                 !eventId ||
-                events.length === 0 ||
                 scannerLoading
               }
               className="group relative mx-auto block aspect-square w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/10 bg-[#0E0C14] text-center transition hover:border-[#8B5CF6]/30 disabled:cursor-not-allowed disabled:opacity-50"
@@ -663,8 +623,8 @@ export default function CheckInScanner({
                 </p>
 
                 <p className="mt-1.5 max-w-[220px] text-[10px] leading-4 text-white/30">
-                  Open the camera and point it at the
-                  attendee&apos;s ticket QR.
+                  Open the camera and point it at
+                  the attendee&apos;s ticket QR.
                 </p>
               </div>
             </button>
@@ -712,8 +672,10 @@ export default function CheckInScanner({
             className="mx-auto max-w-[390px]"
             onSubmit={(event) => {
               event.preventDefault();
-
-              void checkIn(ticketNumber, "ticket");
+              void checkIn(
+                ticketNumber,
+                "ticket"
+              );
             }}
           >
             <label
@@ -734,7 +696,9 @@ export default function CheckInScanner({
                   id="tickety-ticket-number"
                   value={ticketNumber}
                   onChange={(event) =>
-                    setTicketNumber(event.target.value)
+                    setTicketNumber(
+                      event.target.value
+                    )
                   }
                   placeholder="TCK-88213"
                   autoComplete="off"
@@ -773,9 +737,15 @@ export default function CheckInScanner({
           <div className="border-t border-white/[0.07] p-5 sm:p-7">
             <ResultCard
               result={result}
-              success={Boolean(resultIsSuccess)}
-              alreadyUsed={resultIsAlreadyUsed}
-              formatCheckInTime={formatCheckInTime}
+              success={Boolean(
+                resultIsSuccess
+              )}
+              alreadyUsed={
+                resultIsAlreadyUsed
+              }
+              formatCheckInTime={
+                formatCheckInTime
+              }
             />
           </div>
         )}
@@ -794,12 +764,11 @@ export default function CheckInScanner({
 
             <div>
               <p className="text-xs font-semibold text-[#111014]">
-                Checking in
+                Gate check-in
               </p>
 
               <p className="mt-0.5 text-[10px] text-black/35">
-                {selectedEvent?.title ??
-                  "Select an event"}
+                Scan a valid Tickety ticket
               </p>
             </div>
           </div>
@@ -816,8 +785,8 @@ export default function CheckInScanner({
                 </p>
 
                 <p className="mt-1 text-[10px] leading-4 text-black/35">
-                  Point the camera at the QR displayed on
-                  their ticket.
+                  Point the camera at the QR displayed
+                  on their ticket.
                 </p>
               </div>
             </div>
@@ -833,8 +802,8 @@ export default function CheckInScanner({
                 </p>
 
                 <p className="mt-1 text-[10px] leading-4 text-black/35">
-                  Use this when the attendee&apos;s QR cannot
-                  be scanned.
+                  Use this when the attendee&apos;s QR
+                  cannot be scanned.
                 </p>
               </div>
             </div>
@@ -850,8 +819,8 @@ export default function CheckInScanner({
                 </p>
 
                 <p className="mt-1 text-[10px] leading-4 text-black/35">
-                  Only paid, active tickets belonging to this
-                  event can be checked in.
+                  Only paid, active tickets belonging to
+                  this event can be checked in.
                 </p>
               </div>
             </div>
@@ -880,9 +849,9 @@ export default function CheckInScanner({
 
           <p className="mt-5 text-[11px] leading-5 text-white/40">
             A successful scan immediately marks the
-            ticket as used. If the same ticket is scanned
-            again, Tickety will show that it has already
-            been checked in.
+            ticket as used. If the same ticket is
+            scanned again, Tickety will show that it
+            has already been checked in.
           </p>
         </div>
       </aside>
