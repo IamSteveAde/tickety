@@ -70,7 +70,7 @@ export default async function OrganiserCheckInPage() {
               </p>
             </div>
           ) : (
-            <CheckInScanner events={eventOptions} />
+           <CheckInScanner eventId={eventOptions[0].id} />
           )}
         </div>
       </main>

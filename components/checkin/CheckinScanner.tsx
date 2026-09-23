@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Html5Qrcode } from "html5-qrcode";
 import {
   AlertCircle,
   Camera,
@@ -33,25 +32,33 @@ type CheckInScannerProps = {
   eventId: string;
 };
 
-export default function CheckInScanner({
+export default function CheckinScanner({
   eventId,
 }: CheckInScannerProps) {
-  const qrScannerRef = useRef<Html5Qrcode | null>(null);
+ const scannerRef = useRef<any>(null);
   const startingRef = useRef(false);
-  const scanningRef = useRef(false);
+  const checkingInRef = useRef(false);
   const lastScanRef = useRef("");
 
-  const [ticketNumber, setTicketNumber] = useState("");
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [scannerLoading, setScannerLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
-  const [cameraError, setCameraError] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStarting, setCameraStarting] =
+    useState(false);
+  const [cameraError, setCameraError] =
+    useState("");
+
+  const [ticketNumber, setTicketNumber] =
+    useState("");
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [result, setResult] =
+    useState<Result | null>(null);
 
   /*
-   * ==============================================================
-   * CHECK IN
-   * ==============================================================
+   * ============================================================
+   * CHECK IN TICKET
+   * ============================================================
    */
 
   async function checkIn(
@@ -60,7 +67,11 @@ export default function CheckInScanner({
   ) {
     const cleanValue = value.trim();
 
-    if (!cleanValue || !eventId || submitting) {
+    if (
+      !cleanValue ||
+      !eventId ||
+      submitting
+    ) {
       return;
     }
 
@@ -86,7 +97,8 @@ export default function CheckInScanner({
       let data: Result;
 
       try {
-        data = (await response.json()) as Result;
+        data =
+          (await response.json()) as Result;
       } catch {
         data = {
           success: false,
@@ -114,33 +126,34 @@ export default function CheckInScanner({
   }
 
   /*
-   * ==============================================================
-   * OPEN CAMERA
-   *
-   * html5-qrcode owns the camera directly.
-   * There is no temporary getUserMedia stream.
-   * ==============================================================
+   * ============================================================
+   * START CAMERA
+   * ============================================================
    */
 
-  async function openCamera() {
+  async function startCamera() {
     if (
-      !eventId ||
       startingRef.current ||
-      scannerOpen
+      scannerRef.current !== null
     ) {
       return;
     }
 
-    startingRef.current = true;
-    scanningRef.current = false;
+    if (!eventId) {
+      setCameraError(
+        "This event could not be identified."
+      );
+      return;
+    }
 
     setCameraError("");
     setResult(null);
-    setScannerLoading(true);
+    startingRef.current = true;
+    setCameraStarting(true);
 
     try {
       /*
-       * Camera APIs require HTTPS in production.
+       * Camera access requires HTTPS in production.
        */
 
       if (
@@ -148,121 +161,101 @@ export default function CheckInScanner({
         !window.isSecureContext
       ) {
         throw new Error(
-          "SECURE_CONNECTION_REQUIRED"
+          "Camera access requires a secure HTTPS connection."
         );
       }
 
       /*
-       * Dynamically load html5-qrcode so it never gets
-       * executed during Next.js server rendering.
+       * Make sure the browser supports cameras.
        */
 
-      const { Html5Qrcode } = await import(
-        "html5-qrcode"
-      );
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        throw new Error(
+          "This browser does not support camera access."
+        );
+      }
 
       /*
-       * Tell React to render the camera container first.
+       * Dynamically load html5-qrcode.
        */
 
-      setScannerOpen(true);
+      const { Html5Qrcode } =
+        await import("html5-qrcode");
+
+      /*
+       * Open the camera UI before starting the scanner.
+       */
+
+      setCameraOpen(true);
+
+      /*
+       * Wait for the scanner element to exist.
+       */
 
       await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, 150);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
       });
 
-      const element =
+      const reader =
         document.getElementById(
           "tickety-qr-reader"
         );
 
-      if (!element) {
+      if (!reader) {
         throw new Error(
-          "CAMERA_CONTAINER_NOT_FOUND"
+          "Camera viewer could not be created."
         );
       }
 
       /*
-       * Clean up an old scanner if one somehow exists.
+       * Make sure an old scanner isn't hanging around.
        */
 
-      if (qrScannerRef.current) {
-        try {
-          await qrScannerRef.current.stop();
-        } catch {
-          // Already stopped.
-        }
+      const existingScanner = scannerRef.current;
 
-        try {
-          qrScannerRef.current.clear();
-        } catch {
-          // Already cleared.
-        }
+scannerRef.current = null;
 
-        qrScannerRef.current = null;
-      }
+if (existingScanner !== null) {
+  const scanner = existingScanner as any;
 
-      /*
-       * Create the scanner.
-       */
+  try {
+    await existingScanner.stop();
+  } catch {
+    // Already stopped.
+  }
 
-      const scanner = new Html5Qrcode(
-        "tickety-qr-reader"
-      );
+  try {
+    existingScanner.clear();
+  } catch {
+    // Already cleared.
+  }
+}
 
-      qrScannerRef.current = scanner;
+      const scanner = new Html5Qrcode("tickety-qr-reader");
+
+scannerRef.current = scanner;
 
       /*
-       * ------------------------------------------------------------
-       * GET AVAILABLE CAMERAS
-       * ------------------------------------------------------------
-       */
-
-      let cameras;
-
-      try {
-        cameras =
-          await Html5Qrcode.getCameras();
-      } catch (error) {
-        console.error(
-          "Unable to get cameras:",
-          error
-        );
-
-        throw new Error(
-          "CAMERA_PERMISSION_FAILED"
-        );
-      }
-
-      if (!cameras || cameras.length === 0) {
-        throw new Error("NO_CAMERA_FOUND");
-      }
-
-      /*
-       * Prefer the rear-facing camera.
-       */
-
-      const rearCamera =
-        cameras.find((camera) => {
-          const label =
-            camera.label.toLowerCase();
-
-          return (
-            label.includes("back") ||
-            label.includes("rear") ||
-            label.includes("environment") ||
-            label.includes("wide")
-          );
-        }) ?? cameras[0];
-
-      /*
-       * ------------------------------------------------------------
-       * START CAMERA
-       * ------------------------------------------------------------
+       * IMPORTANT:
+       *
+       * We are NOT calling getCameras().
+       *
+       * html5-qrcode will request the environment/rear
+       * camera directly.
        */
 
       await scanner.start(
-        rearCamera.id,
+        {
+          facingMode: "environment",
+        },
         {
           fps: 10,
 
@@ -277,49 +270,41 @@ export default function CheckInScanner({
         },
 
         async (decodedText) => {
-          /*
-           * Ignore scans while another check-in is being
-           * processed.
-           */
-
-          if (scanningRef.current) {
+          if (checkingInRef.current) {
             return;
           }
 
-          const normalized =
+          const value =
             decodedText.trim();
 
-          if (!normalized) {
+          if (!value) {
             return;
           }
 
           /*
-           * Prevent the same QR from firing multiple times.
+           * Prevent repeated reads of the same QR.
            */
 
           if (
-            normalized === lastScanRef.current
+            value === lastScanRef.current
           ) {
             return;
           }
 
-          lastScanRef.current = normalized;
-          scanningRef.current = true;
+          lastScanRef.current = value;
+          checkingInRef.current = true;
 
           /*
-           * Stop camera immediately after a valid QR.
+           * Stop camera before checking in.
            */
 
-          await closeCamera();
+          await stopCamera();
 
           /*
-           * Verify ticket.
+           * Verify the ticket.
            */
 
-          await checkIn(
-            normalized,
-            "qr"
-          );
+          await checkIn(value, "qr");
 
           /*
            * Allow another scan after a short delay.
@@ -327,46 +312,33 @@ export default function CheckInScanner({
 
           window.setTimeout(() => {
             lastScanRef.current = "";
-            scanningRef.current = false;
-          }, 1200);
+            checkingInRef.current = false;
+          }, 1000);
         },
 
-        () => {
-          /*
-           * html5-qrcode calls this repeatedly while
-           * searching for a QR code.
-           *
-           * We intentionally don't display these errors.
-           */
-        }
+        /*
+         * QR scanning errors happen constantly while
+         * the camera is searching. Don't display them.
+         */
+        () => {}
       );
-
-      /*
-       * Camera has successfully started.
-       */
 
       setCameraError("");
     } catch (error) {
       console.error(
-        "Failed to open camera:",
+        "Tickety camera error:",
         error
       );
-
-      const message =
-        error instanceof Error
-          ? error.message
-          : "";
 
       /*
        * Clean up failed scanner.
        */
 
-      const scanner =
-        qrScannerRef.current;
+      const scanner = scannerRef.current;
 
-      qrScannerRef.current = null;
+      scannerRef.current = null;
 
-      if (scanner) {
+      if (scanner !== null) {
         try {
           await scanner.stop();
         } catch {
@@ -380,96 +352,107 @@ export default function CheckInScanner({
         }
       }
 
-      setScannerOpen(false);
+      setCameraOpen(false);
 
-      /*
-       * Show useful error to the user.
-       */
+      const message =
+        error instanceof Error
+          ? error.message
+          : "";
 
       if (
-        message ===
-        "SECURE_CONNECTION_REQUIRED"
+        message.toLowerCase().includes(
+          "permission"
+        ) ||
+        message.toLowerCase().includes(
+          "notallowed"
+        ) ||
+        message.toLowerCase().includes(
+          "denied"
+        )
+      ) {
+        setCameraError(
+          "Camera access was denied. Allow camera access for Tickety in your browser settings, then try again."
+        );
+      } else if (
+        message.toLowerCase().includes(
+          "secure"
+        ) ||
+        message.toLowerCase().includes(
+          "https"
+        )
       ) {
         setCameraError(
           "Camera access requires HTTPS. Open Tickety using its secure HTTPS address."
         );
       } else if (
-        message === "NO_CAMERA_FOUND"
+        message.toLowerCase().includes(
+          "notfound"
+        ) ||
+        message.toLowerCase().includes(
+          "camera"
+        ) &&
+          message.toLowerCase().includes(
+            "found"
+          )
       ) {
         setCameraError(
-          "No camera was found on this device. You can enter the ticket number manually below."
-        );
-      } else if (
-        message ===
-        "CAMERA_PERMISSION_FAILED"
-      ) {
-        setCameraError(
-          "Tickety couldn't access your camera. Please allow camera access for this site in your browser settings, then tap Open camera again."
-        );
-      } else if (
-        message ===
-        "CAMERA_CONTAINER_NOT_FOUND"
-      ) {
-        setCameraError(
-          "The camera could not be initialized. Please try again."
+          "No usable camera was found on this device."
         );
       } else {
         setCameraError(
-          "The camera couldn't be opened. Please allow camera access for Tickety and try again."
+          "Tickety couldn't open your camera. Check your browser camera permission and try again."
         );
       }
     } finally {
       startingRef.current = false;
-      setScannerLoading(false);
+      setCameraStarting(false);
     }
   }
 
   /*
-   * ==============================================================
-   * CLOSE CAMERA
-   * ==============================================================
+   * ============================================================
+   * STOP CAMERA
+   * ============================================================
    */
 
-  async function closeCamera() {
-    const scanner =
-      qrScannerRef.current;
+  async function stopCamera() {
+    const scanner = scannerRef.current;
 
-    qrScannerRef.current = null;
+    scannerRef.current = null;
 
-    setScannerOpen(false);
-    setScannerLoading(false);
+    setCameraOpen(false);
+    setCameraStarting(false);
 
-    if (!scanner) {
+    if (scanner === null) {
       return;
     }
 
     try {
       await scanner.stop();
     } catch {
-      // Camera may already have stopped.
+      // Already stopped.
     }
 
     try {
       scanner.clear();
     } catch {
-      // Scanner may already be cleared.
+      // Already cleared.
     }
   }
 
   /*
-   * ==============================================================
+   * ============================================================
    * CLEANUP
-   * ==============================================================
+   * ============================================================
    */
 
   useEffect(() => {
     return () => {
-      const scanner =
-        qrScannerRef.current;
+      const scanner = scannerRef.current;
 
-      qrScannerRef.current = null;
+      scannerRef.current = null;
 
-      if (scanner) {
+      if (scanner !== null) {
         scanner
           .stop()
           .then(() => {
@@ -487,9 +470,9 @@ export default function CheckInScanner({
   }, []);
 
   /*
-   * ==============================================================
+   * ============================================================
    * RESET WHEN EVENT CHANGES
-   * ==============================================================
+   * ============================================================
    */
 
   useEffect(() => {
@@ -497,20 +480,19 @@ export default function CheckInScanner({
     setResult(null);
     setCameraError("");
     lastScanRef.current = "";
-    scanningRef.current = false;
+    checkingInRef.current = false;
 
-    if (scannerOpen) {
-      void closeCamera();
+    if (scannerRef.current !== null) {
+      void stopCamera();
     }
 
-    // Intentionally reacting only to eventId.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
   /*
-   * ==============================================================
-   * FORMAT CHECK-IN TIME
-   * ==============================================================
+   * ============================================================
+   * FORMAT TIME
+   * ============================================================
    */
 
   function formatCheckInTime(
@@ -536,30 +518,23 @@ export default function CheckInScanner({
     ).format(date);
   }
 
-  const resultIsSuccess =
-    result?.success === true;
-
-  const resultIsAlreadyUsed =
-    result?.status ===
-    "already_checked_in";
-
   /*
-   * ==============================================================
-   * UI
-   * ==============================================================
+   * ============================================================
+   * RENDER
+   * ============================================================
    */
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-      {/* ==========================================================
-          MAIN CHECK-IN PANEL
-      =========================================================== */}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      {/* ========================================================
+          MAIN SCANNER
+      ========================================================= */}
 
       <section className="overflow-hidden rounded-[28px] border border-black/[0.07] bg-[#0B0910] shadow-[0_30px_80px_rgba(0,0,0,0.12)]">
         {/* Header */}
 
         <div className="border-b border-white/[0.07] px-5 py-4 sm:px-7">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#7C3AED]/15">
                 <ScanLine
@@ -574,7 +549,7 @@ export default function CheckInScanner({
                 </p>
 
                 <p className="mt-0.5 text-[9px] text-white/30">
-                  Scan or enter a ticket number
+                  Scan or enter a ticket
                 </p>
               </div>
             </div>
@@ -593,41 +568,33 @@ export default function CheckInScanner({
           </div>
         </div>
 
-        {/* ========================================================
-            CAMERA AREA
-        ========================================================= */}
+        {/* ======================================================
+            CAMERA
+        ======================================================= */}
 
         <div className="px-5 py-7 sm:px-7 sm:py-8">
-          {scannerOpen ? (
-            /*
-             * =====================================================
-             * LIVE CAMERA
-             * =====================================================
-             */
-
+          {cameraOpen ? (
             <div className="relative mx-auto w-full max-w-[420px] overflow-hidden rounded-[24px] border border-white/10 bg-black">
               <div
                 id="tickety-qr-reader"
                 className="min-h-[330px] w-full overflow-hidden [&>div]:!border-0"
               />
 
-              {/* Camera loading */}
-
-              {scannerLoading && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0B0910]/85 backdrop-blur-sm">
+              {cameraStarting && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0B0910]/90">
                   <div className="text-center">
                     <Loader2
-                      size={25}
+                      size={28}
                       className="mx-auto animate-spin text-[#C084FC]"
                     />
 
-                    <p className="mt-3 text-xs font-semibold text-white">
+                    <p className="mt-4 text-sm font-semibold text-white">
                       Opening camera
                     </p>
 
-                    <p className="mt-1 text-[10px] text-white/35">
-                      Please allow camera access if
-                      your browser asks.
+                    <p className="mt-2 max-w-[220px] text-[10px] leading-4 text-white/35">
+                      Your browser may ask for camera
+                      permission.
                     </p>
                   </div>
                 </div>
@@ -638,118 +605,107 @@ export default function CheckInScanner({
               <button
                 type="button"
                 onClick={() =>
-                  void closeCamera()
+                  void stopCamera()
                 }
-                className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white/80 backdrop-blur-md transition hover:bg-black hover:text-white"
+                className="absolute right-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/75 text-white backdrop-blur-md"
                 aria-label="Close camera"
               >
                 <X size={16} />
               </button>
 
-              {/* Scan guide */}
+              {/* QR guide */}
 
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
                 <div className="relative h-[250px] w-[250px]">
-                  <div className="absolute left-0 top-0 h-8 w-8 border-l-2 border-t-2 border-[#C084FC]" />
+                  <div className="absolute left-0 top-0 h-9 w-9 border-l-2 border-t-2 border-[#C084FC]" />
 
-                  <div className="absolute right-0 top-0 h-8 w-8 border-r-2 border-t-2 border-[#C084FC]" />
+                  <div className="absolute right-0 top-0 h-9 w-9 border-r-2 border-t-2 border-[#C084FC]" />
 
-                  <div className="absolute bottom-0 left-0 h-8 w-8 border-b-2 border-l-2 border-[#C084FC]" />
+                  <div className="absolute bottom-0 left-0 h-9 w-9 border-b-2 border-l-2 border-[#C084FC]" />
 
-                  <div className="absolute bottom-0 right-0 h-8 w-8 border-b-2 border-r-2 border-[#C084FC]" />
+                  <div className="absolute bottom-0 right-0 h-9 w-9 border-b-2 border-r-2 border-[#C084FC]" />
 
-                  <div className="absolute left-3 right-3 top-1/2 h-px bg-[#C084FC]/60" />
+                  <div className="absolute left-4 right-4 top-1/2 h-px bg-[#C084FC]/50" />
                 </div>
               </div>
 
-              <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-[10px] font-medium text-white/70 backdrop-blur-md">
-                Point the camera at the QR code
+              <div className="absolute bottom-4 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/75 px-4 py-2 text-[10px] font-medium text-white/70 backdrop-blur-md">
+                Point camera at QR code
               </div>
             </div>
           ) : (
             /*
-             * =====================================================
-             * OPEN CAMERA BUTTON
-             * =====================================================
+             * ===================================================
+             * THIS IS THE CAMERA BUTTON
+             * ===================================================
              */
 
             <div className="mx-auto w-full max-w-[390px]">
               <button
                 type="button"
                 onClick={() =>
-                  void openCamera()
+                  void startCamera()
                 }
                 disabled={
-                  !eventId ||
-                  scannerLoading ||
-                  startingRef.current
+                  cameraStarting ||
+                  startingRef.current ||
+                  !eventId
                 }
-                className="group relative flex aspect-square w-full flex-col items-center justify-center overflow-hidden rounded-[28px] border border-white/10 bg-[#0E0C14] text-center transition hover:border-[#8B5CF6]/40 hover:bg-[#110E18] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                className="group relative flex min-h-[390px] w-full flex-col items-center justify-center overflow-hidden rounded-[28px] border border-white/10 bg-[#0E0C14] px-6 text-center transition hover:border-[#8B5CF6]/40 hover:bg-[#110E18] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {/* Subtle grid */}
-
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-[0.025]"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(rgba(255,255,255,.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.8) 1px, transparent 1px)",
-                    backgroundSize: "35px 35px",
-                  }}
-                />
-
                 {/* Scan frame */}
 
-                <div className="absolute inset-[15%] rounded-[34px] border border-white/[0.06]" />
+                <div className="pointer-events-none absolute inset-[15%] rounded-[30px] border border-white/[0.05]" />
 
-                <div className="absolute left-[15%] top-[15%] h-10 w-10 border-l-2 border-t-2 border-[#A78BFA]" />
+                <div className="pointer-events-none absolute left-[15%] top-[15%] h-9 w-9 border-l-2 border-t-2 border-[#A78BFA]" />
 
-                <div className="absolute right-[15%] top-[15%] h-10 w-10 border-r-2 border-t-2 border-[#A78BFA]" />
+                <div className="pointer-events-none absolute right-[15%] top-[15%] h-9 w-9 border-r-2 border-t-2 border-[#A78BFA]" />
 
-                <div className="absolute bottom-[15%] left-[15%] h-10 w-10 border-b-2 border-l-2 border-[#A78BFA]" />
+                <div className="pointer-events-none absolute bottom-[15%] left-[15%] h-9 w-9 border-b-2 border-l-2 border-[#A78BFA]" />
 
-                <div className="absolute bottom-[15%] right-[15%] h-10 w-10 border-b-2 border-r-2 border-[#A78BFA]" />
+                <div className="pointer-events-none absolute bottom-[15%] right-[15%] h-9 w-9 border-b-2 border-r-2 border-[#A78BFA]" />
 
-                {/* Camera icon */}
+                {/* Camera */}
 
-                <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px] border border-white/[0.08] bg-white/[0.04] transition duration-300 group-hover:-translate-y-1 group-hover:bg-white/[0.06]">
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px] border border-white/[0.08] bg-white/[0.04] transition duration-300 group-hover:-translate-y-1">
                   <Camera
-                    size={30}
+                    size={32}
                     strokeWidth={1.5}
-                    className="text-white/60"
+                    className="text-white/65"
                   />
                 </div>
 
-                <p className="relative mt-6 text-sm font-semibold text-white">
+                <p className="relative mt-6 text-base font-semibold text-white">
                   Open camera
                 </p>
 
-                <p className="relative mt-2 max-w-[230px] text-[10px] leading-4 text-white/30">
-                  Tap here to open your camera and scan
-                  the attendee&apos;s QR ticket.
+                <p className="relative mt-2 max-w-[240px] text-[10px] leading-5 text-white/35">
+                  Use your device camera to scan an
+                  attendee&apos;s Tickety QR code.
                 </p>
 
-                <div className="relative mt-5 inline-flex h-10 items-center gap-2 rounded-[12px] bg-white px-4 text-[11px] font-semibold text-[#111014] transition group-hover:bg-white/90">
-                  <Camera size={14} />
+                <span className="relative mt-6 inline-flex h-11 items-center gap-2 rounded-[13px] bg-white px-5 text-xs font-semibold text-[#111014] transition group-hover:bg-white/90">
+                  <Camera size={15} />
                   Start scanning
-                </div>
+                </span>
               </button>
             </div>
           )}
 
-          {/* ========================================================
+          {/* ======================================================
               CAMERA ERROR
-          ========================================================= */}
+          ======================================================= */}
 
           {cameraError && (
-            <div className="mx-auto mt-4 max-w-[390px] rounded-[16px] border border-amber-400/15 bg-amber-400/[0.05] p-4">
+            <div className="mx-auto mt-4 max-w-[390px] rounded-[16px] border border-red-400/15 bg-red-400/[0.05] p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle
-                  size={15}
-                  className="mt-0.5 shrink-0 text-amber-300"
+                  size={16}
+                  className="mt-0.5 shrink-0 text-red-300"
                 />
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] leading-5 text-amber-200/80">
+                <div className="min-w-0">
+                  <p className="text-[11px] leading-5 text-red-200/80">
                     {cameraError}
                   </p>
 
@@ -757,21 +713,21 @@ export default function CheckInScanner({
                     type="button"
                     onClick={() => {
                       setCameraError("");
-                      void openCamera();
+                      void startCamera();
                     }}
-                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-[10px] bg-amber-200 px-3 text-[10px] font-semibold text-[#241700] transition hover:bg-amber-100"
+                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-[10px] bg-white px-3 text-[10px] font-semibold text-[#111014]"
                   >
                     <RefreshCw size={12} />
-                    Try again
+                    Try camera again
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ========================================================
-              MANUAL TICKET
-          ========================================================= */}
+          {/* ======================================================
+              MANUAL CHECK-IN
+          ======================================================= */}
 
           <div className="mx-auto my-6 flex max-w-[390px] items-center gap-3">
             <div className="h-px flex-1 bg-white/[0.07]" />
@@ -819,7 +775,7 @@ export default function CheckInScanner({
                   placeholder="TCK-88213"
                   autoComplete="off"
                   spellCheck={false}
-                  className="h-12 w-full rounded-[14px] border border-white/10 bg-white/[0.045] pl-10 pr-4 font-mono text-xs uppercase text-white outline-none transition placeholder:text-white/20 focus:border-[#8B5CF6]/50 focus:bg-white/[0.065]"
+                  className="h-12 w-full rounded-[14px] border border-white/10 bg-white/[0.045] pl-10 pr-4 font-mono text-xs uppercase text-white outline-none placeholder:text-white/20 focus:border-[#8B5CF6]/50"
                 />
               </div>
 
@@ -847,18 +803,14 @@ export default function CheckInScanner({
           </form>
         </div>
 
-        {/* ========================================================
+        {/* ======================================================
             RESULT
-        ========================================================= */}
+        ======================================================= */}
 
         {result && (
           <div className="border-t border-white/[0.07] p-5 sm:p-7">
             <ResultCard
               result={result}
-              success={resultIsSuccess}
-              alreadyUsed={
-                resultIsAlreadyUsed
-              }
               formatCheckInTime={
                 formatCheckInTime
               }
@@ -867,24 +819,24 @@ export default function CheckInScanner({
         )}
       </section>
 
-      {/* ==========================================================
-          SIDE INFORMATION
-      =========================================================== */}
+      {/* ========================================================
+          SIDE PANEL
+      ========================================================= */}
 
       <aside className="space-y-4">
         <div className="rounded-[24px] border border-black/[0.07] bg-white p-5 shadow-[0_15px_45px_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#7C3AED]/10 text-[#6D28D9]">
-              <Ticket size={15} />
+              <ScanLine size={15} />
             </div>
 
             <div>
               <p className="text-xs font-semibold text-[#111014]">
-                Gate check-in
+                Quick check-in
               </p>
 
               <p className="mt-0.5 text-[10px] text-black/35">
-                Scan a valid Tickety ticket
+                Three simple steps
               </p>
             </div>
           </div>
@@ -893,19 +845,19 @@ export default function CheckInScanner({
             <Step
               number="1"
               title="Open the camera"
-              description="Tap Open camera and allow browser camera access."
+              description="Tap the button and allow camera access."
             />
 
             <Step
               number="2"
               title="Scan the QR"
-              description="Point the camera at the QR displayed on the attendee's ticket."
+              description="Point the camera at the QR code on the attendee's ticket."
             />
 
             <Step
               number="3"
-              title="Let Tickety verify it"
-              description="Only paid, active tickets belonging to this event can be checked in."
+              title="Confirm entry"
+              description="Tickety verifies the ticket and marks it as checked in."
               highlighted
             />
           </div>
@@ -922,7 +874,7 @@ export default function CheckInScanner({
 
             <div>
               <p className="text-xs font-semibold">
-                Gate staff tip
+                Gate staff
               </p>
 
               <p className="mt-0.5 text-[10px] text-white/30">
@@ -932,10 +884,9 @@ export default function CheckInScanner({
           </div>
 
           <p className="mt-5 text-[11px] leading-5 text-white/40">
-            A successful scan immediately marks the
-            ticket as used. If the same ticket is scanned
-            again, Tickety will show that it has already
-            been checked in.
+            A ticket can only be checked in once.
+            Scanning an already-used ticket will show
+            its previous check-in status.
           </p>
         </div>
       </aside>
@@ -988,23 +939,25 @@ function Step({
 
 /*
  * ================================================================
- * RESULT CARD
+ * RESULT
  * ================================================================
  */
 
 function ResultCard({
   result,
-  success,
-  alreadyUsed,
   formatCheckInTime,
 }: {
   result: Result;
-  success: boolean;
-  alreadyUsed: boolean;
   formatCheckInTime: (
     value?: string | null
   ) => string;
 }) {
+  const success = result.success;
+
+  const alreadyUsed =
+    result.status ===
+    "already_checked_in";
+
   if (success && result.attendee) {
     return (
       <div className="rounded-[20px] border border-[#25D366]/15 bg-[#25D366]/[0.05] p-5">
@@ -1016,7 +969,7 @@ function ResultCard({
             />
           </div>
 
-          <div className="min-w-0">
+          <div>
             <p className="text-sm font-semibold text-white">
               Check-in successful
             </p>
@@ -1041,7 +994,9 @@ function ResultCard({
 
           <Info
             label="Ticket type"
-            value={result.attendee.ticketType}
+            value={
+              result.attendee.ticketType
+            }
           />
 
           <Info
@@ -1086,7 +1041,7 @@ function ResultCard({
           )}
         </div>
 
-        <div className="min-w-0">
+        <div>
           <p className="text-sm font-semibold text-white">
             {result.message}
           </p>

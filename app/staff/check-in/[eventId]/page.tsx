@@ -133,7 +133,7 @@ export default async function StaffEventCheckInPage({
           </p>
         </div>
 
-        <CheckInScanner events={[eventOption]} />
+        <CheckInScanner eventId={eventOption.id} />
       </div>
     </main>
   );
