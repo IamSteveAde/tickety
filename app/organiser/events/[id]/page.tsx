@@ -8,6 +8,7 @@ import { getEventById, getAttendeesForEventId } from "@/lib/data";
 import { formatNaira, ticketsLeft } from "@/lib/utils";
 import { Ticket, Wallet, QrCode, Armchair } from "lucide-react";
 import Link from "next/link";
+import EventStaffManager from "@/components/organiser/EventStaffManager";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export default async function OrganiserEventDashboardPage({
           <p className="mb-3 text-sm font-semibold text-ink">Attendees</p>
           <AttendeeTable attendees={attendees} />
         </div>
+        <EventStaffManager eventId={event.id} />
       </div>
     </div>
   );

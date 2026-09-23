@@ -37,9 +37,9 @@ export default function CoverImageUpload({
 
     setError("");
 
-    // Tickety event artwork must be square (1:1).
-    // Validate the actual image dimensions before uploading so
-    // portrait/landscape artwork can never reach the server.
+    // Square artwork is recommended for the best presentation,
+    // but flyer dimensions are not enforced. Portrait and landscape
+    // images are allowed and may be cropped on the event page.
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image file.");
       e.target.value = "";
@@ -47,50 +47,19 @@ export default function CoverImageUpload({
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image is too large. Please upload an image under 5MB.");
+      setError(
+        "Image is too large. Please upload an image under 5MB."
+      );
       e.target.value = "";
       return;
     }
 
-    const imageUrl = URL.createObjectURL(file);
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
+    setUploading(true);
 
     try {
-      const dimensions = await new Promise<{
-        width: number;
-        height: number;
-      }>((resolve, reject) => {
-        const image = new Image();
-
-        image.onload = () => {
-          resolve({
-            width: image.naturalWidth,
-            height: image.naturalHeight,
-          });
-          URL.revokeObjectURL(imageUrl);
-        };
-
-        image.onerror = () => {
-          URL.revokeObjectURL(imageUrl);
-          reject(new Error("We couldn't read this image. Please try another file."));
-        };
-
-        image.src = imageUrl;
-      });
-
-      if (dimensions.width !== dimensions.height) {
-        setError(
-          `Your flyer must be square (1:1). This image is ${dimensions.width} × ${dimensions.height}px. Please upload a square flyer, such as 500 × 500px.`
-        );
-        e.target.value = "";
-        return;
-      }
-
-      const localPreview = URL.createObjectURL(file);
-      setPreviewUrl(localPreview);
-      setUploading(true);
-
       const formData = new FormData();
-
       formData.append("file", file);
 
       const res = await fetch("/api/upload", {
@@ -177,7 +146,7 @@ export default function CoverImageUpload({
                 </p>
 
                 <p className="mt-0.5 text-[8px] text-white/30">
-                  1:1 square artwork
+                  Square recommended · non-square allowed
                 </p>
               </div>
             </div>
@@ -259,7 +228,7 @@ export default function CoverImageUpload({
               />
 
               <p className="text-[9px] text-white/35">
-                Square flyer · 1:1 · 500 × 500px recommended
+                Square recommended · 1:1 · 500 × 500px recommended
               </p>
             </div>
 
@@ -332,7 +301,7 @@ export default function CoverImageUpload({
           </div>
 
           <p className="relative mt-3 text-[9px] font-medium text-black/30">
-            1:1 square required · 500 × 500px recommended · Maximum 5MB
+            1:1 square recommended · 500 × 500px recommended · Maximum 5MB
           </p>
         </button>
       )}

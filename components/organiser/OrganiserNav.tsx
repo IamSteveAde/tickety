@@ -9,18 +9,29 @@ import {
   LogOut,
   Plus,
   Users,
+  WalletCards,
+  ScanLine,
 } from "lucide-react";
 
 export default function OrganiserNav({
   active,
 }: {
-  active: "dashboard" | "new-event" | "contacts";
+  active:
+    | "dashboard"
+    | "new-event"
+    | "contacts"
+    | "payouts"
+    | "check-in";
 }) {
   const icon =
     active === "dashboard" ? (
       <LayoutDashboard size={15} className="text-white/75" />
     ) : active === "contacts" ? (
       <Users size={15} className="text-white/75" />
+    ) : active === "payouts" ? (
+      <WalletCards size={15} className="text-white/75" />
+    ) : active === "check-in" ? (
+      <ScanLine size={15} className="text-white/75" />
     ) : (
       <Plus size={17} className="text-white/75" />
     );
@@ -30,7 +41,11 @@ export default function OrganiserNav({
       ? "Your events"
       : active === "contacts"
         ? "Contacts"
-        : "Create an event";
+        : active === "payouts"
+          ? "Payouts"
+          : active === "check-in"
+            ? "Check-in"
+            : "Create an event";
 
   return (
     <div className="border-b border-black/[0.07] bg-white">
@@ -56,6 +71,7 @@ export default function OrganiserNav({
           {/* Desktop navigation */}
           <div className="hidden items-center gap-3 md:flex">
             <nav className="flex items-center gap-1 rounded-full border border-black/[0.07] bg-[#FAFAF9] p-1">
+              {/* Dashboard */}
               <Link
                 href="/organiser/dashboard"
                 className={[
@@ -69,6 +85,7 @@ export default function OrganiserNav({
                 <span>Dashboard</span>
               </Link>
 
+              {/* Contacts */}
               <Link
                 href="/organiser/contacts"
                 className={[
@@ -82,6 +99,35 @@ export default function OrganiserNav({
                 <span>Contacts</span>
               </Link>
 
+              {/* Payouts */}
+              <Link
+                href="/organiser/payouts"
+                className={[
+                  "group flex h-10 items-center gap-2 rounded-full px-4 text-xs font-semibold transition-all",
+                  active === "payouts"
+                    ? "bg-[#111014] text-white shadow-[0_4px_14px_rgba(17,16,20,0.14)]"
+                    : "text-black/40 hover:bg-white hover:text-black/75",
+                ].join(" ")}
+              >
+                <WalletCards size={14} />
+                <span>Payouts</span>
+              </Link>
+
+              {/* Check-in */}
+              <Link
+                href="/organiser/check-in"
+                className={[
+                  "group flex h-10 items-center gap-2 rounded-full px-4 text-xs font-semibold transition-all",
+                  active === "check-in"
+                    ? "bg-[#111014] text-white shadow-[0_4px_14px_rgba(17,16,20,0.14)]"
+                    : "text-black/40 hover:bg-white hover:text-black/75",
+                ].join(" ")}
+              >
+                <ScanLine size={14} />
+                <span>Check-in</span>
+              </Link>
+
+              {/* Create event */}
               <Link
                 href="/organiser/events/new"
                 className={[
@@ -148,10 +194,11 @@ export default function OrganiserNav({
         {/* Mobile organiser navigation */}
         <div className="overflow-x-auto pb-3 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <nav className="flex w-max items-center gap-1 rounded-full border border-black/[0.07] bg-[#FAFAF9] p-1">
+            {/* Dashboard */}
             <Link
               href="/organiser/dashboard"
               className={[
-                "flex h-9 items-center gap-2 rounded-full px-3.5 text-[11px] font-semibold whitespace-nowrap transition-all",
+                "flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[11px] font-semibold transition-all",
                 active === "dashboard"
                   ? "bg-[#111014] text-white shadow-[0_4px_14px_rgba(17,16,20,0.14)]"
                   : "text-black/40 hover:bg-white hover:text-black/75",
@@ -161,10 +208,11 @@ export default function OrganiserNav({
               <span>Dashboard</span>
             </Link>
 
+            {/* Contacts */}
             <Link
               href="/organiser/contacts"
               className={[
-                "flex h-9 items-center gap-2 rounded-full px-3.5 text-[11px] font-semibold whitespace-nowrap transition-all",
+                "flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[11px] font-semibold transition-all",
                 active === "contacts"
                   ? "bg-[#111014] text-white shadow-[0_4px_14px_rgba(17,16,20,0.14)]"
                   : "text-black/40 hover:bg-white hover:text-black/75",
@@ -174,10 +222,39 @@ export default function OrganiserNav({
               <span>Contacts</span>
             </Link>
 
+            {/* Payouts */}
+            <Link
+              href="/organiser/payouts"
+              className={[
+                "flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[11px] font-semibold transition-all",
+                active === "payouts"
+                  ? "bg-[#111014] text-white shadow-[0_4px_14px_rgba(17,16,20,0.14)]"
+                  : "text-black/40 hover:bg-white hover:text-black/75",
+              ].join(" ")}
+            >
+              <WalletCards size={13} />
+              <span>Payouts</span>
+            </Link>
+
+            {/* Check-in */}
+            <Link
+              href="/organiser/check-in"
+              className={[
+                "flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[11px] font-semibold transition-all",
+                active === "check-in"
+                  ? "bg-[#111014] text-white shadow-[0_4px_14px_rgba(17,16,20,0.14)]"
+                  : "text-black/40 hover:bg-white hover:text-black/75",
+              ].join(" ")}
+            >
+              <ScanLine size={13} />
+              <span>Check-in</span>
+            </Link>
+
+            {/* Create event */}
             <Link
               href="/organiser/events/new"
               className={[
-                "flex h-9 items-center gap-2 rounded-full px-3.5 text-[11px] font-semibold whitespace-nowrap transition-all",
+                "flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-3.5 text-[11px] font-semibold transition-all",
                 active === "new-event"
                   ? "bg-[#7C3AED] text-white shadow-[0_4px_14px_rgba(124,58,237,0.18)]"
                   : "text-black/40 hover:bg-white hover:text-black/75",

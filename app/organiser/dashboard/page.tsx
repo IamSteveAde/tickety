@@ -31,6 +31,9 @@ type DashboardEvent = {
   id: string;
   title: string;
   status: string;
+  date: string;
+  startTime: string;
+  endTime: string;
   ticketsSold: number;
   gross: number;
 };
@@ -74,9 +77,17 @@ export default async function OrganiserDashboardPage({
     0
   );
 
-  const liveEvents = events.filter(
-    (event) => event.status === "live"
-  ).length;
+ const now = new Date();
+
+const liveEvents = events.filter((event) => {
+  if (event.status !== "live") return false;
+
+  const eventEnd = new Date(
+    `${event.date}T${event.endTime}:00`
+  );
+
+  return eventEnd > now;
+}).length;
 
   const pendingEvents = events.filter(
     (event) => event.status === "pending"
@@ -358,7 +369,21 @@ function EventRow({
   index: number;
 }) {
   const isPending = event.status === "pending";
-  const isLive = event.status === "live";
+
+const eventEnd = new Date(
+  `${event.date}T${event.endTime}:00`
+);
+
+const hasEnded =
+  event.status === "live" &&
+  eventEnd <= new Date();
+
+const isLive =
+  event.status === "live" && !hasEnded;
+
+const displayStatus = hasEnded
+  ? "ended"
+  : event.status;
 
   return (
     <div className="group relative border-b border-black/[0.055] transition-colors duration-200 last:border-0 hover:bg-[#FCFBFA]">
@@ -388,10 +413,12 @@ function EventRow({
 
                 <span>
                   {isPending
-                    ? "Awaiting listing payment"
-                    : isLive
-                      ? "Published event"
-                      : "Event"}
+  ? "Awaiting listing payment"
+  : hasEnded
+    ? "Event has ended"
+    : isLive
+      ? "Published event"
+      : "Event"}
                 </span>
               </div>
             </div>
@@ -401,7 +428,7 @@ function EventRow({
         {/* Status */}
 
         <div>
-          <StatusBadge status={event.status} />
+         <StatusBadge status={displayStatus} />
         </div>
 
         {/* Sold */}
@@ -450,7 +477,7 @@ function EventRow({
 
               <span className="h-px w-5 bg-black/10" />
 
-              <StatusBadge status={event.status} />
+              <StatusBadge status={displayStatus} />
             </div>
 
             <Link
@@ -530,17 +557,21 @@ function StatusBadge({
 }) {
   return (
     <Badge
-      tone={
-        status === "live"
-          ? "leaf"
-          : status === "pending"
-            ? "amber"
-            : "red"
-      }
+    tone={
+  status === "live"
+    ? "leaf"
+    : status === "pending"
+      ? "amber"
+      : status === "ended" || status === "archived"
+        ? "red"
+        : "red"
+}
     >
       {status === "pending"
-        ? "awaiting payment"
-        : status}
+  ? "awaiting payment"
+  : status === "ended"
+    ? "ended"
+    : status}
     </Badge>
   );
 }

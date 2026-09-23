@@ -1,7 +1,3 @@
-// Prisma schema for the Tickety.africa Ticket & Event Engine.
-// Mirrors the shapes in lib/types.ts closely on purpose — lib/data.ts maps
-// between the two, so components never need to know a database exists.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,25 +8,20 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum Role {
-  ORGANISER
-  ADMIN
-}
-
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(ORGANISER)
-  events       Event[]
-  createdAt    DateTime @default(now())
-}
+  id                     String  @id @default(cuid())
+  name                   String
+  email                  String  @unique
+  passwordHash           String
+  role                   Role    @default(ORGANISER)
+  paystackSubaccountCode String?
 
-enum EventStatus {
-  live
-  pending
-  disabled
+  events Event[]
+
+  eventStaff   EventStaff[]
+  invitedStaff StaffInvitation[] @relation("StaffInvitationsSent")
+
+  createdAt DateTime @default(now())
 }
 
 model Event {
@@ -42,6 +33,7 @@ model Event {
   venue         String
   date          DateTime
   startTime     String
+  endTime       String
   category      String
   status        EventStatus @default(live)
   featured      Boolean     @default(false)
@@ -53,42 +45,199 @@ model Event {
   minAge        Int?
 
   organiserId String
-  organiser   User @relation(fields: [organiserId], references: [id])
+  createdAt   DateTime @default(now())
 
-  ticketTypes       TicketType[]
-  customQuestions   CustomQuestion[]
-  attendees         Attendee[]
+  eventStaff       EventStaff[]
+  staffInvitations StaffInvitation[]
+
+  attendees       Attendee[]
+  customQuestions CustomQuestion[]
+
+  organiser         User               @relation(fields: [organiserId], references: [id])
   listingFeePayment ListingFeePayment?
-
-  createdAt DateTime @default(now())
+  orders            Order[]
+  ticketTypes       TicketType[]
 
   @@index([state])
   @@index([category])
   @@index([organiserId])
+  @@index([date])
+}
+
+model EventStaff {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
+}
+
+model StaffInvitation {
+  id          String    @id @default(cuid())
+  email       String
+  eventId     String
+  invitedById String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  invitedBy User  @relation("StaffInvitationsSent", fields: [invitedById], references: [id])
+
+  @@index([email])
+  @@index([eventId])
 }
 
 model TicketType {
-  id            String @id @default(cuid())
-  name          String
-  price         Int // Naira, 0 = free
-  quantityTotal Int
-  quantitySold  Int    @default(0)
+  id               String @id @default(cuid())
+  name             String
+  price            Int
+  quantityTotal    Int
+  quantitySold     Int    @default(0)
+  eventId          String
+  quantityReserved Int    @default(0)
 
-  eventId String
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  attendees  Attendee[]
+  orderItems OrderItem[]
 
-  attendees Attendee[]
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
 }
 
 model CustomQuestion {
   id       String   @id @default(cuid())
   label    String
-  type     String   @default("text") // "text" | "select"
+  type     String   @default("text")
   options  String[] @default([])
   required Boolean  @default(false)
+  eventId  String
 
-  eventId String
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
+
+model Order {
+  id          String @id @default(cuid())
+  reference   String @unique
+  paystackRef String @unique
+
+  name  String
+  email String
+  phone String
+
+  amount           Int
+  ticketAmount     Int @default(0)
+  serviceFee       Int @default(0)
+  organiserAmount  Int @default(0)
+  commissionAmount Int @default(0)
+  platformFee      Int @default(0)
+
+  status PaymentStatus @default(pending)
+
+  expiresAt DateTime?
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  eventId       String
+  customAnswers Json?
+
+  attendees Attendee[]
+  event     Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+
+  @@index([eventId])
+  @@index([status])
+  @@index([email])
+}
+
+model OrderItem {
+  id           String @id @default(cuid())
+  quantity     Int
+  unitPrice    Int
+  orderId      String
+  ticketTypeId String
+
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  @@unique([orderId, ticketTypeId])
+  @@index([ticketTypeId])
+}
+
+model Attendee {
+  id            String        @id @default(cuid())
+  name          String
+  email         String
+  phone         String
+  ticketId      String        @unique
+  amountPaid    Int
+  purchaseDate  DateTime      @default(now())
+  paymentStatus PaymentStatus @default(pending)
+  checkInStatus Boolean       @default(false)
+  checkInTime   DateTime?
+  ticketStatus  TicketStatus  @default(active)
+  customAnswers Json?
+
+  eventId      String
+  ticketTypeId String
+  orderId      String?
+
+  event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  order      Order?     @relation(fields: [orderId], references: [id])
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  transaction Transaction?
+
+  @@index([eventId])
+  @@index([email])
+  @@index([orderId])
+}
+
+model Transaction {
+  id          String        @id @default(cuid())
+  amount      Int
+  platformFee Int
+  status      PaymentStatus @default(pending)
+  date        DateTime      @default(now())
+
+  attendeeId String @unique
+
+  attendee Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+}
+
+model ListingFeePayment {
+  id          String        @id @default(cuid())
+  eventId     String        @unique
+  amount      Int
+  paystackRef String        @unique
+  status      PaymentStatus @default(pending)
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ORGANISER
+  CHECKIN_STAFF
+  ADMIN
+}
+
+enum EventStatus {
+  live
+  pending
+  disabled
+  archived
 }
 
 enum PaymentStatus {
@@ -102,49 +251,4 @@ enum TicketStatus {
   used
   transferred
   cancelled
-}
-
-model Attendee {
-  id            String        @id @default(cuid())
-  name          String
-  email         String
-  phone         String
-  ticketId      String        @unique // human-facing ticket number, e.g. TCK-88213
-  amountPaid    Int
-  purchaseDate  DateTime      @default(now())
-  paymentStatus PaymentStatus @default(pending)
-  checkInStatus Boolean       @default(false)
-  checkInTime   DateTime?
-  ticketStatus  TicketStatus  @default(active)
-  customAnswers Json?
-
-  eventId String
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  ticketTypeId String
-  ticketType   TicketType @relation(fields: [ticketTypeId], references: [id])
-
-  transaction Transaction?
-}
-
-model Transaction {
-  id          String        @id @default(cuid())
-  amount      Int
-  platformFee Int
-  status      PaymentStatus @default(pending)
-  date        DateTime      @default(now())
-
-  attendeeId String   @unique
-  attendee   Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
-}
-
-model ListingFeePayment {
-  id          String        @id @default(cuid())
-  eventId     String        @unique
-  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  amount      Int
-  paystackRef String        @unique
-  status      PaymentStatus @default(pending)
-  paidAt      DateTime?
-  createdAt   DateTime      @default(now())
 }

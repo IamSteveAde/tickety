@@ -20,53 +20,55 @@ export default function EventCard({
 }) {
   const from = priceFrom(event.ticketTypes);
 
-  const isFree = event.ticketTypes[0]?.price === 0;
+  const isFree =
+    event.ticketTypes.length > 0 &&
+    event.ticketTypes.every((ticket) => ticket.price === 0);
 
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group relative block"
+      className="group block h-full w-full min-w-0"
     >
-      {/* =====================================================
-          CARD
-      ===================================================== */}
-      <article className="relative overflow-hidden rounded-[28px] border border-black/[0.07] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.07)] transition-all duration-500 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_28px_75px_rgba(0,0,0,0.12)]">
-        {/* ===================================================
-            IMAGE FRAME
+      <article className="relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[24px] border border-black/[0.07] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.07)] transition-all duration-500 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_28px_75px_rgba(0,0,0,0.12)]">
+        {/* =====================================================
+            FIXED IMAGE FRAME
 
-            IMPORTANT:
-            No fixed image height.
-            No object-cover.
-            Entire image remains visible.
-        =================================================== */}
+            Every event gets the exact same media dimensions.
+
+            object-cover means:
+            - portrait flyers are cropped
+            - landscape flyers are cropped
+            - square flyers are cropped
+            - nothing stretches
+            - nothing changes the card height
+        ===================================================== */}
         <div
-          className={`relative flex w-full items-center justify-center overflow-hidden bg-gradient-to-br ${event.coverGradient}`}
+          className={`relative h-[260px] w-full shrink-0 overflow-hidden bg-gradient-to-br ${event.coverGradient}`}
         >
-          {/* Image */}
           {event.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={event.coverImageUrl}
               alt={event.title}
-              className="relative block h-auto max-h-[620px] w-full object-contain object-center transition-transform duration-700 ease-out group-hover:scale-[1.012]"
+              className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.025]"
             />
           ) : (
-            /* Fallback */
-            <div className="flex aspect-[4/5] w-full items-center justify-center">
+            /* Fallback uses the exact same frame */
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[15px] border border-white/20 bg-black/10 text-white/60">
                   <Ticket size={20} />
                 </div>
 
-                <p className="mt-3 font-display text-sm font-semibold text-white/50">
+                <p className="mt-3 max-w-[190px] truncate px-4 font-display text-sm font-semibold text-white/50">
                   {event.title}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Very subtle image overlay */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/[0.03] via-transparent to-black/[0.14]" />
+          {/* Image treatment */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/[0.03] via-transparent to-black/[0.18]" />
 
           {/* =================================================
               TOP BADGES
@@ -89,7 +91,7 @@ export default function EventCard({
               CATEGORY
           ================================================= */}
           <div className="absolute bottom-4 left-4 z-10">
-            <div className="rounded-full border border-white/15 bg-black/35 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-white backdrop-blur-xl">
+            <div className="max-w-[calc(100vw-80px)] truncate rounded-full border border-white/15 bg-black/35 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-white backdrop-blur-xl sm:max-w-[220px]">
               {event.category}
             </div>
           </div>
@@ -97,7 +99,7 @@ export default function EventCard({
           {/* =================================================
               HOVER ARROW
           ================================================= */}
-          <div className="absolute right-4 bottom-4 z-10 flex h-9 w-9 translate-y-2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white opacity-0 backdrop-blur-xl transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <div className="absolute bottom-4 right-4 z-10 flex h-9 w-9 translate-y-2 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white opacity-0 backdrop-blur-xl transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
             <ArrowUpRight size={15} />
           </div>
         </div>
@@ -105,8 +107,7 @@ export default function EventCard({
         {/* =====================================================
             TICKET SEPARATOR
         ===================================================== */}
-
-        <div className="relative h-px">
+        <div className="relative h-px shrink-0">
           {/* Left notch */}
           <span className="absolute -left-[11px] -top-[10px] h-5 w-5 rounded-full border-r border-black/[0.07] bg-[#F5F1EB]" />
 
@@ -119,15 +120,19 @@ export default function EventCard({
 
         {/* =====================================================
             EVENT DETAILS
+
+            flex-1 makes this section fill the remaining card
+            height rather than allowing content to determine
+            the card height.
         ===================================================== */}
-        <div className="flex flex-col px-5 pb-5 pt-4">
+        <div className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-4">
           {/* Title */}
-          <h3 className="font-display text-xl font-semibold leading-[1.05] tracking-[-0.035em] text-[#111014] transition-colors duration-300 group-hover:text-[#6D28D9]">
+          <h3 className="line-clamp-2 min-h-[42px] font-display text-xl font-semibold leading-[1.05] tracking-[-0.035em] text-[#111014] transition-colors duration-300 group-hover:text-[#6D28D9]">
             {event.title}
           </h3>
 
           {/* Date */}
-          <div className="mt-3 flex items-center gap-2 text-black/45">
+          <div className="mt-3 flex shrink-0 items-center gap-2 text-black/45">
             <CalendarDays
               size={13}
               strokeWidth={1.8}
@@ -143,7 +148,7 @@ export default function EventCard({
           </div>
 
           {/* Location */}
-          <div className="mt-2 flex items-start gap-2 text-black/40">
+          <div className="mt-2 flex min-h-0 items-start gap-2 text-black/40">
             <MapPin
               size={13}
               strokeWidth={1.8}
@@ -157,8 +162,11 @@ export default function EventCard({
 
           {/* =================================================
               BOTTOM META
+
+              mt-auto locks this section to the bottom of
+              every card.
           ================================================= */}
-          <div className="mt-5 flex items-end justify-between border-t border-black/[0.06] pt-4">
+          <div className="mt-auto flex shrink-0 items-end justify-between border-t border-black/[0.06] pt-4">
             <div>
               <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-black/25">
                 Tickets

@@ -15,6 +15,8 @@ import {
   Ticket,
   Trash2,
   Users,
+  WalletCards,
+  X,
 } from "lucide-react";
 
 import Button from "@/components/ui/Button";
@@ -38,6 +40,7 @@ export default function EventForm() {
   const [state, setState] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -67,6 +70,13 @@ export default function EventForm() {
 
   const [errorMessage, setErrorMessage] =
     useState("");
+
+  const [payoutCheck, setPayoutCheck] = useState<
+    "idle" | "checking" | "connected" | "missing" | "error"
+  >("idle");
+
+  const [showPayoutNotice, setShowPayoutNotice] =
+    useState(false);
 
   function updateTicketType(
     index: number,
@@ -133,13 +143,67 @@ export default function EventForm() {
     );
   }
 
+  async function checkPayoutSetup(): Promise<boolean> {
+    setPayoutCheck("checking");
+
+    try {
+      const res = await fetch("/api/organiser/payout", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setPayoutCheck("error");
+        return false;
+      }
+
+      const connected = Boolean(
+        data?.paystackSubaccountCode
+      );
+
+      setPayoutCheck(
+        connected ? "connected" : "missing"
+      );
+
+      return connected;
+    } catch (error) {
+      console.error("Payout setup check failed:", error);
+      setPayoutCheck("error");
+      return false;
+    }
+  }
+
   async function handleSubmit(
     e: React.FormEvent
   ) {
     e.preventDefault();
 
-    setStatus("submitting");
     setErrorMessage("");
+    setShowPayoutNotice(false);
+
+    /*
+     * Paid events need an organiser Paystack subaccount because
+     * ticket revenue is split between the organiser and Tickety.
+     *
+     * Free events do NOT need payout details. The organiser can
+     * publish the event and simply pay Tickety's ₦50,000 listing fee.
+     */
+    if (!isFree) {
+      const payoutReady = await checkPayoutSetup();
+
+      if (!payoutReady) {
+        setStatus("idle");
+        setShowPayoutNotice(true);
+        setErrorMessage(
+          "Please add your bank account details before publishing a paid event. Tickety needs this to send your ticket-sale proceeds to you."
+        );
+        return;
+      }
+    }
+
+    setStatus("submitting");
 
     try {
       const res = await fetch("/api/events", {
@@ -153,6 +217,7 @@ export default function EventForm() {
           state: state ? `${state}, ${country}` : country,
           date,
           startTime,
+          endTime,
           category,
           description,
           coverImageUrl,
@@ -226,9 +291,8 @@ export default function EventForm() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-white/45">
-              Your event page has been created and
-              your WhatsApp ticket flow is ready for
-              attendees.
+              Your event page has been created and your
+              Tickety ticket flow is ready for attendees.
             </p>
 
             <Button
@@ -315,6 +379,7 @@ export default function EventForm() {
           </div>
         </div>
       )}
+
 
       {/* ========================================================
           01 — EVENT DETAILS
@@ -485,6 +550,21 @@ export default function EventForm() {
             </Field>
 
             <Field
+  label="End time"
+  required
+  icon={<Clock3 size={13} />}
+  hint="Tickets remain available while the event is ongoing."
+>
+  <input
+    required
+    type="time"
+    value={endTime}
+    onChange={(e) => setEndTime(e.target.value)}
+    className={inputClass}
+  />
+</Field>
+
+            <Field
               label="Category"
               required
             >
@@ -588,70 +668,35 @@ export default function EventForm() {
         <div className="mt-9 space-y-8">
           <Field
             label="Event flyer"
-            required
-            hint="Square flyer required · 1:1 ratio · 500 × 500 px recommended"
+            hint="Square format recommended · 1:1 · 500 × 500 px recommended"
           >
             <div className="space-y-4">
-              <div className="rounded-[18px] border border-[#7C3AED]/20 bg-[#F8F5FF] px-4 py-4 sm:px-5">
+              <div className="rounded-[18px] border border-[#7C3AED]/15 bg-[#F8F5FF] px-4 py-4 sm:px-5">
                 <div className="flex items-start gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#7C3AED]/10">
-                    <CheckCircle2
-                      size={15}
-                      className="text-[#7C3AED]"
-                    />
+                    <CheckCircle2 size={15} className="text-[#7C3AED]" />
                   </div>
 
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-[#111014]">
-                      Your flyer must be square
+                      Square flyer recommended
                     </p>
 
                     <p className="mt-1.5 text-[11px] leading-5 text-black/50">
-                      Upload your flyer in a perfect{" "}
-                      <strong className="font-semibold text-black/65">
-                        1:1 square format
-                      </strong>. We recommend{" "}
-                      <strong className="font-semibold text-black/65">
-                        500 × 500 px
-                      </strong>.
+                      A square <strong className="font-semibold text-black/65">1:1 format</strong> works best on Tickety. We recommend <strong className="font-semibold text-black/65">500 × 500 px</strong>.
                     </p>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-bold tracking-[0.04em] text-[#7C3AED] shadow-sm">
-                        1:1 RATIO
-                      </span>
-
-                      <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-bold tracking-[0.04em] text-black/50 shadow-sm">
-                        500 × 500 PX
-                      </span>
-                    </div>
+                    <p className="mt-2 text-[11px] leading-5 text-black/45">
+                      You can still upload a non-square flyer. It will not prevent you from publishing, but the image may be cropped when displayed on the event page.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-3.5">
-                <AlertCircle
-                  size={15}
-                  className="mt-0.5 shrink-0 text-amber-600"
-                />
-
-                <p className="text-[11px] leading-5 text-amber-800/80">
-                  <strong className="font-semibold text-amber-900">
-                    Important:
-                  </strong>{" "}
-                  If your flyer is not square, it will be{" "}
-                  <strong className="font-semibold text-amber-900">
-                    cropped to fit the square format
-                  </strong>. Important text, logos, faces or other parts of your design may be cut off. Please upload a square flyer to make sure your complete design is displayed.
-                </p>
-              </div>
-
-              <div>
-                <CoverImageUpload
-                  value={coverImageUrl}
-                  onChange={setCoverImageUrl}
-                />
-              </div>
+              <CoverImageUpload
+                value={coverImageUrl}
+                onChange={setCoverImageUrl}
+              />
 
               <div className="flex items-center justify-between px-1">
                 <p className="text-[10px] font-medium text-black/30">
@@ -809,11 +854,26 @@ export default function EventForm() {
                   </p>
 
                   <p className="mt-1 max-w-md text-xs leading-5 text-black/40">
-                    Attendees won't be charged.
-                    Set the maximum number of
-                    people your venue can
-                    accommodate.
+                    Attendees won&apos;t be charged. Set the maximum number of
+                    people your venue can accommodate.
                   </p>
+
+                  <div className="mt-4 flex items-start gap-2.5 rounded-[12px] border border-black/[0.07] bg-white/80 px-3.5 py-3">
+                    <CircleDollarSign
+                      size={14}
+                      className="mt-0.5 shrink-0 text-black/35"
+                    />
+                    <p className="text-[11px] leading-5 text-black/45">
+                      <strong className="font-semibold text-black/65">
+                        Event listing fee:
+                      </strong>{" "}
+                      Creating and publishing an event on Tickety costs{" "}
+                      <strong className="font-semibold text-black/70">
+                        ₦50,000
+                      </strong>
+                      . This fee applies whether your event is free or paid.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -838,6 +898,39 @@ export default function EventForm() {
           </div>
         ) : (
           <div className="mt-9">
+            <div className="mb-6 flex items-start gap-3 rounded-[18px] border border-[#7C3AED]/15 bg-[#F8F5FF] px-4 py-4 sm:px-5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#7C3AED]/10">
+                <CircleDollarSign
+                  size={15}
+                  className="text-[#7C3AED]"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-[#111014]">
+                  Tickety platform fee
+                </p>
+
+                <p className="mt-1 text-[11px] leading-5 text-black/50">
+                  Tickety retains a{" "}
+                  <strong className="font-semibold text-black/70">
+                    10% commission on ticket sales
+                  </strong>
+                  . This is deducted from the ticket revenue paid to the
+                  organiser. Attendees also pay the applicable service fee
+                  during checkout.
+                </p>
+
+                <p className="mt-2 text-[10px] font-medium text-black/35">
+                  Creating and publishing your event costs{" "}
+                  <strong className="font-semibold text-black/55">
+                    ₦50,000
+                  </strong>
+                  , payable when your listing is submitted.
+                </p>
+              </div>
+            </div>
+
             {/* Desktop headings */}
 
             <div className="mb-3 hidden grid-cols-[1fr_190px_190px_44px] gap-3 px-4 sm:grid">
@@ -1070,6 +1163,78 @@ export default function EventForm() {
       </section>
 
       
+      {showPayoutNotice && !isFree && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#111014]/55 px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payout-modal-title"
+        >
+          <div className="relative w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-[0_30px_80px_rgba(0,0,0,0.20)]">
+            <button
+              type="button"
+              onClick={() => setShowPayoutNotice(false)}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-black/35 transition-colors hover:bg-black/[0.05] hover:text-black/70"
+              aria-label="Close payout setup notice"
+            >
+              <X size={17} />
+            </button>
+
+            <div className="p-6 sm:p-7">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#7C3AED]/10">
+                <WalletCards size={21} className="text-[#7C3AED]" />
+              </div>
+
+              <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7C3AED]">
+                Payout setup required
+              </p>
+
+              <h2 id="payout-modal-title" className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[#111014]">
+                Add your bank account first
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-black/50">
+                Paid events need a verified payout account so Tickety can send your ticket-sale proceeds to you. You only need to do this once.
+              </p>
+
+              <div className="mt-5 rounded-[16px] border border-black/[0.07] bg-[#FAFAF9] px-4 py-3.5">
+                <p className="text-xs font-semibold text-[#111014]">
+                  What to do
+                </p>
+                <p className="mt-1.5 text-[11px] leading-5 text-black/45">
+                  Go to Payouts, enter your bank details and complete the verification. Then come back here and publish your paid event.
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowPayoutNotice(false)}
+                  className="h-11 rounded-full px-5 text-xs font-semibold"
+                >
+                  Not now
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => {
+                    window.location.href = "/organiser/payouts";
+                  }}
+                  className="h-11 rounded-full bg-[#7C3AED] px-5 text-xs font-semibold text-white hover:bg-[#6D28D9]"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    Set up payouts
+                    <ArrowRight size={15} />
+                  </span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================
           FIXED PUBLISH BAR
       ======================================================== */}

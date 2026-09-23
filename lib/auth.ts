@@ -4,41 +4,90 @@ import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  session: {
+    strategy: "jwt",
+  },
+
+  pages: {
+    signIn: "/login",
+  },
+
   providers: [
     CredentialsProvider({
       name: "Credentials",
+
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        email: {
+          label: "Email",
+          type: "email",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+        },
       },
+
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        if (!user) return null;
+        const email = credentials.email.trim().toLowerCase();
 
-        const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!valid) return null;
+        const user = await prisma.user.findUnique({
+          where: {
+            email,
+          },
+        });
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        if (!user) {
+          return null;
+        }
+
+        const valid = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        );
+
+        if (!valid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as { id: string }).id;
-        token.role = (user as { role: "ORGANISER" | "ADMIN" }).role;
+
+        token.role = (
+          user as {
+            role: "ORGANISER" | "CHECKIN_STAFF" | "ADMIN";
+          }
+        ).role;
       }
+
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as "ORGANISER" | "ADMIN";
+
+        session.user.role = token.role as
+          | "ORGANISER"
+          | "CHECKIN_STAFF"
+          | "ADMIN";
       }
+
       return session;
     },
   },

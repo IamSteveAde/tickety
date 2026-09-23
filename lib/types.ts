@@ -9,9 +9,10 @@ export type EventCategory =
 export interface TicketType {
   id: string;
   name: string;
-  price: number; // in Naira, 0 means free
+  price: number;
   quantityTotal: number;
   quantitySold: number;
+  quantityReserved: number;
 }
 
 export interface CustomQuestion {
@@ -29,38 +30,62 @@ export interface EventItem {
   description: string;
   state: string;
   venue: string;
-  date: string; // ISO date
-  startTime: string; // e.g. "16:00"
+
+  // ISO date, e.g. "2026-09-12"
+  date: string;
+
+  // 24-hour time, e.g. "16:00"
+  startTime: string;
+
+  // 24-hour time, e.g. "23:00"
+  endTime: string;
+
   category: EventCategory;
+
   organiserName: string;
-organiserId?: string;
+  organiserId?: string;
+
   ticketTypes: TicketType[];
   customQuestions: CustomQuestion[];
+
   featured: boolean;
   trending: boolean;
+
   coverGradient: string;
   coverImageUrl?: string;
+
   tags?: string[];
   refundPolicy?: string;
   minAge?: number;
 }
 
 export type PaymentStatus = "paid" | "pending" | "failed";
-export type TicketStatus = "active" | "used" | "transferred" | "cancelled";
+
+export type TicketStatus =
+  | "active"
+  | "used"
+  | "transferred"
+  | "cancelled";
 
 export interface Attendee {
   id: string;
   name: string;
   email: string;
   phone: string;
+
   ticketType: string;
   ticketId: string;
+
   amountPaid: number;
   purchaseDate: string;
+
   paymentStatus: PaymentStatus;
+
   checkInStatus: boolean;
   checkInTime?: string;
+
   ticketStatus: TicketStatus;
+
   answers?: string;
 }
 
@@ -78,7 +103,14 @@ export interface AdminEventSummary {
   id: string;
   title: string;
   organiserName: string;
-  status: "live" | "pending" | "disabled";
+  status:
+    | "live"
+    | "pending"
+    | "disabled"
+    | "archived";
+  date: string;
+  startTime: string;
+  endTime: string;
   ticketsSold: number;
   gross: number;
 }

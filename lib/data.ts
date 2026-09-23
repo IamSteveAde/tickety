@@ -29,6 +29,30 @@ const COVER_GRADIENTS = [
   "from-leaf-600 via-plum-600 to-plum-800",
 ];
 
+function getEventEndDate(event: {
+  date: Date;
+  endTime: string;
+}): Date {
+  const [hours, minutes] = event.endTime.split(":").map(Number);
+
+  const endDate = new Date(event.date);
+  endDate.setHours(hours, minutes, 0, 0);
+
+  return endDate;
+}
+
+function isEventCurrentlyPublic(event: {
+  status: string;
+  date: Date;
+  endTime: string;
+}): boolean {
+  if (event.status !== "live") {
+    return false;
+  }
+
+  return getEventEndDate(event) > new Date();
+}
+
 function randomCoverGradient(): string {
   return COVER_GRADIENTS[
     Math.floor(Math.random() * COVER_GRADIENTS.length)
@@ -63,6 +87,7 @@ function mapEvent(event: EventWithRelations): EventItem {
     venue: event.venue,
     date: event.date.toISOString().slice(0, 10),
     startTime: event.startTime,
+    endTime: event.endTime,
     category: event.category as EventCategory,
     organiserName: event.organiser.name,
     organiserId: event.organiserId,
@@ -80,6 +105,7 @@ function mapEvent(event: EventWithRelations): EventItem {
       price: t.price,
       quantityTotal: t.quantityTotal,
       quantitySold: t.quantitySold,
+      quantityReserved: t.quantityReserved,
     })),
 
     customQuestions: event.customQuestions.map(
@@ -135,9 +161,10 @@ export async function getEvents(): Promise<EventItem[]> {
     },
   });
 
-  return events.map(mapEvent);
+  return events
+    .filter(isEventCurrentlyPublic)
+    .map(mapEvent);
 }
-
 export async function getMostBookedEvents(
   limit = 3
 ): Promise<EventItem[]> {
@@ -159,8 +186,9 @@ export async function getMostBookedEvents(
     .sort((a, b) => b.sold - a.sold);
 
   return ranked
-    .slice(0, limit)
-    .map((item) => mapEvent(item.event));
+  .filter((item) => isEventCurrentlyPublic(item.event))
+  .slice(0, limit)
+  .map((item) => mapEvent(item.event));
 }
 
 export async function getEventBySlug(
@@ -173,9 +201,12 @@ export async function getEventBySlug(
     include: eventInclude,
   });
 
-  return event ? mapEvent(event) : null;
-}
+  if (!event || !isEventCurrentlyPublic(event)) {
+    return null;
+  }
 
+  return mapEvent(event);
+}
 export async function getEventById(
   id: string
 ): Promise<EventItem | null> {
@@ -194,12 +225,14 @@ export async function getAllEventSlugs(): Promise<string[]> {
     where: {
       status: "live",
     },
-    select: {
-      slug: true,
+    include: {
+      ticketTypes: false,
     },
   });
 
-  return events.map((event) => event.slug);
+  return events
+    .filter(isEventCurrentlyPublic)
+    .map((event) => event.slug);
 }
 
 /* ===============================================================
@@ -322,19 +355,23 @@ export async function getAdminEvents(): Promise<
   return events.map((event) => {
     const paidAttendees = event.attendees.filter(
       (attendee) => attendee.paymentStatus === "paid"
+      
     );
 
     return {
-      id: event.id,
-      title: event.title,
-      organiserName: event.organiser.name,
-      status: event.status,
-      ticketsSold: event.attendees.length,
-      gross: paidAttendees.reduce(
-        (sum, attendee) => sum + attendee.amountPaid,
-        0
-      ),
-    };
+  id: event.id,
+  title: event.title,
+  organiserName: event.organiser.name,
+  status: event.status,
+  date: event.date.toISOString().slice(0, 10),
+  startTime: event.startTime,
+  endTime: event.endTime,
+  ticketsSold: event.attendees.length,
+  gross: paidAttendees.reduce(
+    (sum, attendee) => sum + attendee.amountPaid,
+    0
+  ),
+};
   });
 }
 
@@ -359,22 +396,28 @@ export async function getEventsByOrganiserId(
   });
 
   return events.map((event) => {
-    const paidAttendees = event.attendees.filter(
-      (attendee) => attendee.paymentStatus === "paid"
-    );
+  const paidAttendees = event.attendees.filter(
+    (attendee) => attendee.paymentStatus === "paid"
+  );
 
-    return {
-      id: event.id,
-      title: event.title,
-      organiserName: event.organiser.name,
-      status: event.status,
-      ticketsSold: event.attendees.length,
-      gross: paidAttendees.reduce(
-        (sum, attendee) => sum + attendee.amountPaid,
-        0
-      ),
-    };
-  });
+  return {
+    id: event.id,
+    title: event.title,
+    organiserName: event.organiser.name,
+    status: event.status,
+
+    // Needed by the organizer dashboard to calculate ENDED
+    date: event.date.toISOString().slice(0, 10),
+    startTime: event.startTime,
+    endTime: event.endTime,
+
+    ticketsSold: event.attendees.length,
+    gross: paidAttendees.reduce(
+      (sum, attendee) => sum + attendee.amountPaid,
+      0
+    ),
+  };
+});
 }
 
 /* ===============================================================
@@ -421,15 +464,11 @@ export async function getOrganisersSummary(): Promise<
 
 export async function setEventStatus(
   eventId: string,
-  status: "live" | "pending" | "disabled"
+  status: "live" | "pending" | "disabled" | "archived"
 ): Promise<void> {
   await prisma.event.update({
-    where: {
-      id: eventId,
-    },
-    data: {
-      status,
-    },
+    where: { id: eventId },
+    data: { status },
   });
 }
 
@@ -445,6 +484,7 @@ interface CreateEventInput {
   venue: string;
   date: string;
   startTime: string;
+  endTime: string;
   category: string;
   organiserId: string;
   status?: "live" | "pending" | "disabled";
@@ -476,6 +516,7 @@ export async function createEvent(
       venue: input.venue,
       date: new Date(input.date),
       startTime: input.startTime,
+       endTime: input.endTime,
       category: input.category,
       organiserId: input.organiserId,
       status: input.status ?? "live",

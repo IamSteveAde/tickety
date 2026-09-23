@@ -4,6 +4,7 @@ import "./globals.css";
 import SiteNavigation from "@/components/layout/SiteNavigation";
 import Footer from "@/components/layout/Footer";
 import AuthSessionProvider from "@/components/providers/SessionProvider";
+import ConditionalSiteChrome from "@/components/layout/ConditionalSiteChrome";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -37,13 +38,14 @@ export default function RootLayout({
     >
       <body className="flex min-h-screen flex-col font-body">
         <AuthSessionProvider>
-          <SiteNavigation />
+          <ConditionalSiteChrome />
 
           <main className="flex-1">
             {children}
           </main>
 
-          <Footer />
+          <ConditionalSiteChrome footer />
+
         </AuthSessionProvider>
       </body>
     </html>

@@ -101,7 +101,7 @@ export default function ExploreClient({
           <div className="absolute right-[7%] top-0 hidden h-full w-px bg-white/[0.05] lg:block" />
         </div>
 
-        {/* Increased top spacing for fixed navbar */}
+        {/* Hero content */}
         <div className="relative mx-auto max-w-7xl px-5 pb-14 pt-28 sm:px-8 sm:pb-18 sm:pt-32 lg:px-10 lg:pb-20 lg:pt-36">
           {/* Eyebrow */}
           <div className="mb-7 flex items-center gap-3">
@@ -120,6 +120,7 @@ export default function ExploreClient({
 
               <div className="mt-1 flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
                 <span className="text-[10px] font-medium text-white/60">
                   Events happening around you
                 </span>
@@ -143,13 +144,9 @@ export default function ExploreClient({
             </p>
           </div>
 
-          {/* =====================================================
-              SEARCH
-          ===================================================== */}
-
+          {/* Search */}
           <div className="mt-10 max-w-3xl">
             <div className="group relative">
-              {/* Search focus atmosphere */}
               <div className="pointer-events-none absolute -inset-1 rounded-[24px] bg-[#7C3AED]/20 opacity-0 blur-xl transition-opacity duration-500 group-focus-within:opacity-100" />
 
               <div className="relative flex h-[68px] items-center rounded-[20px] border border-white/10 bg-white/[0.07] shadow-[0_25px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-all duration-300 focus-within:border-white/20 focus-within:bg-white/[0.09]">
@@ -180,7 +177,7 @@ export default function ExploreClient({
             </div>
           </div>
 
-          {/* Quick discovery line */}
+          {/* Quick discovery */}
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
             <span className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/30">
               Discover
@@ -214,12 +211,8 @@ export default function ExploreClient({
       ========================================================= */}
 
       <section className="relative mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14 lg:px-10 lg:py-16">
-        {/* =======================================================
-            TOP CONTROLS
-        ======================================================= */}
-
+        {/* TOP CONTROLS */}
         <div className="flex flex-col gap-6 border-b border-black/[0.07] pb-7 lg:flex-row lg:items-center lg:justify-between">
-          {/* Results information */}
           <div>
             <div className="flex items-center gap-3">
               <h2 className="font-display text-2xl font-semibold tracking-[-0.035em] text-[#111014] sm:text-3xl">
@@ -253,15 +246,9 @@ export default function ExploreClient({
           </div>
         </div>
 
-        {/* =======================================================
-            MAIN CONTENT
-        ======================================================= */}
-
+        {/* MAIN CONTENT */}
         <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
-          {/* =====================================================
-              FILTER SIDEBAR
-          ===================================================== */}
-
+          {/* FILTER SIDEBAR */}
           <aside className="w-full shrink-0 lg:w-[210px]">
             <div className="mb-4 flex items-center gap-2 lg:hidden">
               <SlidersHorizontal
@@ -285,10 +272,7 @@ export default function ExploreClient({
             </div>
           </aside>
 
-          {/* =====================================================
-              RESULTS
-          ===================================================== */}
-
+          {/* RESULTS */}
           <div className="min-w-0 flex-1">
             {/* Active filters */}
             {hasFilters && (
@@ -339,10 +323,7 @@ export default function ExploreClient({
               </div>
             )}
 
-            {/* =================================================
-                EMPTY STATE
-            ================================================= */}
-
+            {/* EMPTY STATE */}
             {filtered.length === 0 ? (
               <div className="relative overflow-hidden rounded-[28px] border border-black/[0.07] bg-white px-6 py-20 text-center shadow-[0_18px_55px_rgba(0,0,0,0.035)] sm:px-10">
                 <div
@@ -398,26 +379,15 @@ export default function ExploreClient({
                   </span>
                 </div>
 
-                {/* =================================================
-                    EVENT GRID
-                ================================================= */}
-
-                <div className="grid items-stretch grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                  {filtered.map((event) => (
-                    <div
-                      key={event.id}
-                      className="flex h-full min-w-0"
-                    >
-                      <div className="flex h-full w-full min-w-0 flex-col">
-                        <div className="flex h-full min-h-[520px] w-full flex-col overflow-hidden rounded-[24px]">
-                          <div className="flex h-full w-full min-h-0 flex-col">
-                            <EventCard event={event} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {/* EVENT GRID */}
+                <div className="grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 xl:grid-cols-3">
+  {filtered.map((event) => (
+    <EventCard
+      key={event.id}
+      event={event}
+    />
+  ))}
+</div>
               </>
             )}
           </div>
