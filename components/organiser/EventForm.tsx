@@ -144,36 +144,69 @@ export default function EventForm() {
   }
 
   async function checkPayoutSetup(): Promise<boolean> {
-    setPayoutCheck("checking");
+  setPayoutCheck("checking");
 
-    try {
-      const res = await fetch("/api/organiser/payout", {
+  try {
+    const res = await fetch(
+      "/api/organiser/payout",
+      {
         method: "GET",
         cache: "no-store",
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setPayoutCheck("error");
-        return false;
       }
+    );
 
-      const connected = Boolean(
-        data?.paystackSubaccountCode
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error(
+        "Payout status request failed:",
+        data
       );
 
-      setPayoutCheck(
-        connected ? "connected" : "missing"
-      );
-
-      return connected;
-    } catch (error) {
-      console.error("Payout setup check failed:", error);
       setPayoutCheck("error");
       return false;
     }
+
+    const connected =
+      data?.connected === true ||
+      data?.payoutConfigured === true ||
+      Boolean(data?.paystackSubaccountCode) ||
+      Boolean(data?.subaccountCode);
+
+    console.log(
+      "Tickety payout status:",
+      {
+        connected,
+        apiConnected: data?.connected,
+        payoutConfigured:
+          data?.payoutConfigured,
+        hasSubaccountCode:
+          Boolean(data?.subaccountCode),
+        hasPaystackSubaccountCode:
+          Boolean(
+            data?.paystackSubaccountCode
+          ),
+      }
+    );
+
+    setPayoutCheck(
+      connected
+        ? "connected"
+        : "missing"
+    );
+
+    return connected;
+  } catch (error) {
+    console.error(
+      "Payout setup check failed:",
+      error
+    );
+
+    setPayoutCheck("error");
+
+    return false;
   }
+}
 
   async function handleSubmit(
     e: React.FormEvent
