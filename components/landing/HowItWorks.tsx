@@ -1,434 +1,681 @@
-import type { LucideIcon } from "lucide-react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
-  ArrowUpRight,
+  CalendarDays,
   Check,
+  CheckCircle2,
+  ChevronRight,
   Compass,
-  MessageCircle,
+  CreditCard,
+  LockKeyhole,
+  MapPin,
+  MousePointer2,
+  Pause,
+  Play,
   ScanLine,
+  ShieldCheck,
   Ticket,
 } from "lucide-react";
+
+type StepIndex = 0 | 1 | 2;
+
+const STEP_DURATION = 4200;
 
 const steps = [
   {
     number: "01",
     label: "DISCOVER",
-    title: "Find something worth going to.",
-    body: "Explore events by location, category, or what is happening around you. Find the experience first. Decide when you are ready.",
+    title: "Find your next experience.",
+    description:
+      "Explore events, discover what is happening around you, and find something worth showing up for.",
     icon: Compass,
+    detail: "Explore events",
   },
   {
     number: "02",
-    label: "GET YOUR TICKET",
-    title: "A simpler way to buy.",
-    body: "Choose your ticket, answer a few questions, and complete your purchase through a familiar, straightforward flow.",
-    icon: MessageCircle,
+    label: "BOOK",
+    title: "Choose your ticket. Book online.",
+    description:
+      "Select your ticket, review your order, and complete your payment securely on Tickety.",
+    icon: CreditCard,
+    detail: "Secure checkout",
   },
   {
     number: "03",
-    label: "SHOW UP",
-    title: "Your ticket is ready when you are.",
-    body: "Your ticket and QR code are ready for entry. When it is time, show it at the gate and enjoy the experience.",
+    label: "EXPERIENCE",
+    title: "Your ticket. Ready when you are.",
+    description:
+      "Access your ticket directly on Tickety. When entry opens, present your QR code at the gate.",
     icon: ScanLine,
+    detail: "Digital ticket",
   },
-];
+] as const;
 
-export default function HowItWorks() {
+function EventPreview() {
   return (
-    <section className="relative overflow-hidden bg-[#FBFAFC] text-zinc-950">
-      {/* Quiet editorial background */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-      >
-        <div className="absolute left-1/2 top-[-260px] h-[620px] w-[620px] -translate-x-1/2 rounded-full bg-violet-100/45 blur-[120px]" />
-        <div className="absolute right-[-180px] top-[35%] h-[420px] w-[420px] rounded-full bg-violet-50/50 blur-[110px]" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white/70 to-transparent" />
+    <div className="w-full max-w-[365px] overflow-hidden rounded-2xl border border-white/15 bg-[#171326] shadow-[0_25px_70px_rgba(0,0,0,0.25)]">
+      <div className="relative flex h-[116px] items-end overflow-hidden bg-[linear-gradient(125deg,#5B21B6_0%,#7C3AED_45%,#C084FC_100%)] p-4">
+        <div
+          aria-hidden="true"
+          className="absolute -right-8 -top-16 h-52 w-52 rounded-full border-[35px] border-white/10"
+        />
+
+        <div
+          aria-hidden="true"
+          className="absolute right-12 top-[-45px] h-44 w-44 rounded-full border border-white/20"
+        />
+
+        <span className="relative rounded-md border border-white/20 bg-black/20 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">
+          Music & nightlife
+        </span>
       </div>
 
-      <div className="relative mx-auto max-w-[1440px] px-5 py-20 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
-        {/* =========================================================
-            HEADER
-        ========================================================= */}
-        <header className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-end lg:gap-20">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[16px] font-semibold tracking-[-0.04em] text-white">
+              Lagos After Dark
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] text-white/50">
+              <span className="flex items-center gap-1.5">
+                <CalendarDays size={11} />
+                Saturday
+              </span>
+
+              <span className="flex items-center gap-1.5">
+                <MapPin size={11} />
+                Victoria Island
+              </span>
+            </div>
+          </div>
+
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300">
+            <ArrowRight size={15} />
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+          <div>
+            <p className="text-[9px] text-white/40">
+              Tickets from
+            </p>
+
+            <p className="mt-0.5 text-[15px] font-semibold tracking-[-0.04em] text-white">
+              ₦12,500
+            </p>
+          </div>
+
+          <span className="rounded-lg bg-white px-3 py-2 text-[10px] font-semibold text-[#24133F]">
+            View event
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CheckoutPreview() {
+  return (
+    <div className="w-full max-w-[365px] overflow-hidden rounded-2xl border border-white/15 bg-[#171326] shadow-[0_25px_70px_rgba(0,0,0,0.25)]">
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5 sm:px-5">
+        <div className="flex items-center gap-2">
+          <LockKeyhole
+            size={13}
+            className="text-violet-300"
+          />
+
+          <span className="text-[11px] font-semibold text-white">
+            Secure checkout
+          </span>
+        </div>
+
+        <span className="text-[9px] text-white/40">
+          tickety.africa
+        </span>
+      </div>
+
+      <div className="p-4 sm:p-5">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-300">
+          Order summary
+        </p>
+
+        <h4 className="mt-2 text-[16px] font-semibold tracking-[-0.035em] text-white">
+          Lagos After Dark
+        </h4>
+
+        <div className="mt-5 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3.5">
+          <div>
+            <p className="text-[11px] font-semibold text-white">
+              General Admission
+            </p>
+
+            <p className="mt-1 text-[9px] text-white/40">
+              2 tickets
+            </p>
+          </div>
+
+          <p className="text-[13px] font-semibold text-white">
+            ₦25,000
+          </p>
+        </div>
+
+        <div className="mt-4 space-y-2.5">
+          <div className="flex items-center justify-between text-[10px] text-white/50">
+            <span>Tickets</span>
+            <span>₦25,000</span>
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-white/50">
+            <span>Service fee</span>
+            <span>₦1,200</span>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-white/10 pt-3 text-[12px] font-semibold text-white">
+            <span>Total</span>
+            <span>₦26,200</span>
+          </div>
+        </div>
+
+        <div className="mt-5 flex h-10 items-center justify-center gap-2 rounded-lg bg-violet-600 text-[11px] font-semibold text-white">
+          <CreditCard size={13} />
+          Pay securely
+          <ArrowRight size={13} />
+        </div>
+
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] text-white/35">
+          <ShieldCheck size={11} />
+          Secure online payment
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TicketPreview() {
+  return (
+    <div className="w-full max-w-[365px]">
+      <div className="overflow-hidden rounded-2xl border border-white/15 bg-[#171326] shadow-[0_25px_70px_rgba(0,0,0,0.25)]">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5 sm:px-5">
+          <div className="flex items-center gap-2">
+            <Ticket
+              size={14}
+              className="text-violet-300"
+            />
+
+            <span className="text-[11px] font-semibold text-white">
+              My tickets
+            </span>
+          </div>
+
+          <span className="flex items-center gap-1.5 text-[9px] text-emerald-300">
+            <CheckCircle2 size={12} />
+            Confirmed
+          </span>
+        </div>
+
+        <div className="p-4 sm:p-5">
+          <div className="rounded-xl bg-white p-4 text-zinc-900">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-600">
+                  Admission ticket
+                </p>
+
+                <h4 className="mt-2 text-[17px] font-bold tracking-[-0.045em]">
+                  Lagos After Dark
+                </h4>
+
+                <p className="mt-2 text-[10px] text-zinc-500">
+                  Saturday · Victoria Island
+                </p>
+              </div>
+
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                <Ticket size={18} />
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between border-t border-dashed border-zinc-200 pt-4">
+              <div>
+                <p className="text-[9px] text-zinc-400">
+                  Ticket type
+                </p>
+
+                <p className="mt-1 text-[12px] font-semibold">
+                  General Admission
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 text-[9px] font-semibold text-emerald-700">
+                <Check size={11} />
+                Booked
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-violet-400/15 bg-violet-400/[0.07] px-3 py-2.5">
+            <ScanLine
+              size={15}
+              className="shrink-0 text-violet-300"
+            />
+
+            <p className="text-[10px] leading-4 text-white/65">
+              Your entry QR code becomes available
+              closer to the event.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepVisual({
+  activeStep,
+}: {
+  activeStep: StepIndex;
+}) {
+  return (
+    <div className="relative mx-auto w-full max-w-[410px]">
+      <div className="mb-4 flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+
+          <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/45">
+            On Tickety
+          </span>
+        </div>
+
+        <span className="text-[9px] font-medium text-white/30">
+          0{activeStep + 1} / 03
+        </span>
+      </div>
+
+      {/* Constant height prevents shifting between previews */}
+      <div className="relative h-[365px] overflow-hidden sm:h-[385px]">
+        {[
+          <EventPreview key="event" />,
+          <CheckoutPreview key="checkout" />,
+          <TicketPreview key="ticket" />,
+        ].map((visual, index) => (
+          <div
+            key={index}
+            aria-hidden={activeStep !== index}
+            className={[
+              "absolute inset-x-0 top-0 flex justify-center transition-all duration-700 ease-out",
+              activeStep === index
+                ? "translate-y-0 scale-100 opacity-100"
+                : index < activeStep
+                  ? "-translate-y-5 scale-[0.98] opacity-0"
+                  : "translate-y-5 scale-[0.98] opacity-0",
+            ].join(" ")}
+          >
+            {visual}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function HowItWorks() {
+  const [activeStep, setActiveStep] =
+    useState<StepIndex>(0);
+
+  const [playing, setPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [inView, setInView] = useState(false);
+
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const progressRef = useRef(0);
+
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.2,
+      }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!playing || !inView) return;
+
+    let frame = 0;
+    let lastTime = 0;
+
+    const animate = (timestamp: number) => {
+      if (!lastTime) {
+        lastTime = timestamp;
+      }
+
+      const delta = Math.min(
+        timestamp - lastTime,
+        100
+      );
+
+      lastTime = timestamp;
+
+      progressRef.current +=
+        (delta / STEP_DURATION) * 100;
+
+      if (progressRef.current >= 100) {
+        progressRef.current = 0;
+
+        setActiveStep((current) =>
+          ((current + 1) % 3) as StepIndex
+        );
+      }
+
+      setProgress(progressRef.current);
+
+      frame = requestAnimationFrame(animate);
+    };
+
+    frame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frame);
+  }, [playing, inView]);
+
+  function selectStep(index: StepIndex) {
+    setActiveStep(index);
+    progressRef.current = 0;
+    setProgress(0);
+  }
+
+  return (
+    <section
+      ref={sectionRef}
+      id="how-it-works"
+      className="relative isolate overflow-hidden bg-[#10091F] text-white"
+    >
+      {/* Brand dark gradient background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,#10091F_0%,#1B1034_48%,#10091F_100%)]" />
+
+        <div className="absolute right-[-260px] top-[-280px] h-[680px] w-[680px] rounded-full bg-violet-700/15 blur-[130px]" />
+
+        <div className="absolute bottom-[-360px] left-[-250px] h-[700px] w-[700px] rounded-full bg-purple-800/20 blur-[140px]" />
+
+        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:80px_80px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-[1360px] px-5 py-20 sm:px-8 sm:py-24 lg:px-12 lg:py-28">
+        {/* Section header */}
+        <div className="grid gap-5 lg:grid-cols-[0.65fr_1.35fr] lg:items-end lg:gap-16">
           <div>
             <div className="flex items-center gap-3">
-              <span className="h-px w-9 bg-violet-600" />
+              <span className="h-px w-8 bg-violet-400" />
 
-              <span className="text-[9px] font-semibold uppercase tracking-[0.22em] text-violet-700">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300">
                 How Tickety works
               </span>
             </div>
 
-            <p className="mt-6 max-w-[300px] text-[12px] font-medium leading-6 tracking-[-0.01em] text-zinc-500">
-              Three simple steps from discovering something you want to do to
-              walking through the gate.
+            <p className="mt-5 max-w-[250px] text-[12px] leading-6 text-white/45">
+              One platform. Three simple steps.
+              From discovery to the door.
             </p>
           </div>
 
-          <div>
-            <h2 className="max-w-[880px] text-[3.15rem] font-semibold leading-[0.94] tracking-[-0.065em] text-zinc-950 sm:text-[4.5rem] lg:text-[5.5rem] xl:text-[6.15rem]">
-              Going out should
-              <br />
-              <span className="text-violet-600">feel this easy.</span>
-            </h2>
-          </div>
-        </header>
-
-        {/* =========================================================
-            JOURNEY NAV
-        ========================================================= */}
-        <div className="mt-14 flex items-center gap-4 border-t border-zinc-200 pt-5 lg:mt-20">
-          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
-            Your journey
-          </span>
-
-          <div className="h-px flex-1 bg-zinc-200" />
-
-          <div className="hidden items-center gap-3 sm:flex">
-            <JourneyLabel active>Discover</JourneyLabel>
-            <ArrowRight size={11} className="text-zinc-300" />
-            <JourneyLabel>Get your ticket</JourneyLabel>
-            <ArrowRight size={11} className="text-zinc-300" />
-            <JourneyLabel>Show up</JourneyLabel>
-          </div>
+          <h2 className="max-w-[800px] text-[clamp(2.6rem,5.5vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.065em]">
+            Going out should
+            <br />
+            <span className="text-violet-400">
+              feel this easy.
+            </span>
+          </h2>
         </div>
 
-        {/* =========================================================
-            STEPS
-        ========================================================= */}
-        <div className="mt-10 grid gap-5 lg:mt-12 lg:grid-cols-3">
-          {steps.map((step, index) => (
-            <JourneyCard
-              key={step.number}
-              step={step}
-              index={index}
+        {/* Main timeline and preview */}
+        <div className="mt-14 grid gap-12 border-t border-white/10 pt-12 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-20 lg:pt-16">
+          {/* Vertical timeline */}
+          <div className="relative">
+            {/* Timeline track */}
+            <div
+              aria-hidden="true"
+              className="absolute bottom-[55px] left-[19px] top-[20px] w-px bg-white/10 sm:left-[23px]"
             />
-          ))}
-        </div>
 
-        {/* =========================================================
-            BOTTOM BRAND STATEMENT
-        ========================================================= */}
-        <div className="mt-14 flex flex-col gap-5 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-between lg:mt-16">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
-              <Ticket size={15} strokeWidth={1.7} />
-            </div>
+            {/* Animated progress track */}
+            <div
+              aria-hidden="true"
+              className="absolute left-[19px] top-[20px] w-px bg-violet-400 transition-[height] duration-300 sm:left-[23px]"
+              style={{
+                height: `calc((100% - 75px) * ${
+                  (activeStep + progress / 100) / 3
+                })`,
+              }}
+            />
 
-            <p className="max-w-[520px] text-[11px] font-medium leading-5 tracking-[-0.01em] text-zinc-500">
-              Discover on Tickety. Get your ticket simply. Show up ready.
-            </p>
-          </div>
+            <div className="space-y-10 sm:space-y-12">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const active = activeStep === index;
+                const completed = activeStep > index;
 
-          <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
-            <span>Simple by design</span>
-            <ArrowRight size={12} className="text-violet-600" />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+                return (
+                  <button
+                    key={step.number}
+                    type="button"
+                    onClick={() =>
+                      selectStep(index as StepIndex)
+                    }
+                    className="group relative flex w-full items-start gap-5 text-left sm:gap-7"
+                    aria-current={
+                      active ? "step" : undefined
+                    }
+                  >
+                    {/* Timeline node */}
+                    <span
+                      className={[
+                        "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-500 sm:h-12 sm:w-12",
+                        active
+                          ? "border-violet-400 bg-violet-600 text-white shadow-[0_0_0_6px_rgba(139,92,246,0.1)]"
+                          : completed
+                            ? "border-violet-500 bg-violet-600 text-white"
+                            : "border-white/15 bg-[#1B1330] text-white/35 group-hover:border-violet-400/50",
+                      ].join(" ")}
+                    >
+                      {completed ? (
+                        <Check size={18} />
+                      ) : (
+                        <Icon
+                          size={18}
+                          strokeWidth={1.7}
+                        />
+                      )}
+                    </span>
 
-function JourneyLabel({
-  children,
-  active = false,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-}) {
-  return (
-    <span
-      className={[
-        "text-[9px] font-semibold uppercase tracking-[0.15em]",
-        active ? "text-violet-600" : "text-zinc-400",
-      ].join(" ")}
-    >
-      {children}
-    </span>
-  );
-}
+                    {/* Copy */}
+                    <div className="min-w-0 flex-1 pb-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <span
+                          className={[
+                            "text-[10px] font-semibold uppercase tracking-[0.18em] transition-colors",
+                            active
+                              ? "text-violet-300"
+                              : "text-white/30",
+                          ].join(" ")}
+                        >
+                          {step.number} / {step.label}
+                        </span>
 
-function JourneyCard({
-  step,
-  index,
-}: {
-  step: (typeof steps)[number];
-  index: number;
-}) {
-  const Icon = step.icon;
+                        <ChevronRight
+                          size={15}
+                          className={[
+                            "transition-all duration-300",
+                            active
+                              ? "translate-x-0 text-violet-300"
+                              : "-translate-x-1 text-white/20 group-hover:translate-x-0",
+                          ].join(" ")}
+                        />
+                      </div>
 
-  return (
-    <article
-      className={[
-        "group relative overflow-hidden rounded-[28px] border border-zinc-200/90 bg-white",
-        "transition-all duration-500 hover:-translate-y-1 hover:border-zinc-300 hover:shadow-[0_24px_70px_rgba(24,24,27,0.08)]",
-        index === 1 ? "lg:translate-y-8" : "",
-      ].join(" ")}
-    >
-      {/* Card header */}
-      <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[9px] font-bold tracking-[0.16em] text-zinc-300">
-            {step.number}
-          </span>
+                      <h3
+                        className={[
+                          "mt-2 text-[22px] font-semibold leading-[1.15] tracking-[-0.045em] transition-colors sm:text-[27px]",
+                          active
+                            ? "text-white"
+                            : "text-white/55 group-hover:text-white/80",
+                        ].join(" ")}
+                      >
+                        {step.title}
+                      </h3>
 
-          <span className="h-px w-5 bg-zinc-200" />
+                      <p
+                        className={[
+                          "mt-3 max-w-[440px] text-[12px] leading-6 transition-colors sm:text-[13px]",
+                          active
+                            ? "text-white/60"
+                            : "text-white/35",
+                        ].join(" ")}
+                      >
+                        {step.description}
+                      </p>
 
-          <span className="text-[9px] font-semibold uppercase tracking-[0.17em] text-violet-600">
-            {step.label}
-          </span>
-        </div>
-
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-500 transition-colors duration-300 group-hover:border-violet-200 group-hover:bg-violet-50 group-hover:text-violet-600">
-          <Icon size={14} strokeWidth={1.8} />
-        </div>
-      </div>
-
-      {/* Product visual */}
-      <div className="relative h-[260px] overflow-hidden bg-[#F8F7FA] sm:h-[280px]">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-[0.35]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #E4E4E7 1px, transparent 1px), linear-gradient(to bottom, #E4E4E7 1px, transparent 1px)",
-            backgroundSize: "52px 52px",
-          }}
-        />
-
-        <div className="absolute inset-x-8 top-1/2 h-px -translate-y-1/2 bg-zinc-200/70" />
-
-        {index === 0 && <DiscoverVisual />}
-        {index === 1 && <ConversationVisual />}
-        {index === 2 && <TicketVisual />}
-
-        <div className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm transition-all duration-300 group-hover:border-violet-600 group-hover:bg-violet-600 group-hover:text-white">
-          <ArrowUpRight
-            size={14}
-            strokeWidth={1.8}
-            className="text-zinc-400 transition-colors group-hover:text-white"
-          />
-        </div>
-      </div>
-
-      {/* Copy */}
-      <div className="px-5 pb-7 pt-6 sm:px-7">
-        <h3 className="max-w-[390px] text-[24px] font-semibold leading-[1.02] tracking-[-0.045em] text-zinc-900 sm:text-[27px]">
-          {step.title}
-        </h3>
-
-        <p className="mt-4 max-w-[390px] text-[12px] font-medium leading-6 tracking-[-0.005em] text-zinc-500">
-          {step.body}
-        </p>
-      </div>
-    </article>
-  );
-}
-
-function DiscoverVisual() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="relative w-[290px] sm:w-[320px]">
-        {/* Main event card */}
-        <div className="relative overflow-hidden rounded-[20px] border border-zinc-200 bg-white shadow-[0_24px_55px_rgba(24,24,27,0.09)]">
-          <div className="h-[84px] bg-violet-600">
-            <div className="flex h-full items-end justify-between p-4">
-              <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/65">
-                Tonight
-              </span>
-
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white">
-                <Ticket size={15} strokeWidth={1.7} />
-              </div>
+                      {/* Active step progress */}
+                      <div className="mt-4 h-[2px] max-w-[260px] overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-violet-400"
+                          style={{
+                            width: active
+                              ? `${progress}%`
+                              : completed
+                                ? "100%"
+                                : "0%",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="p-4">
-            <p className="text-[14px] font-semibold tracking-[-0.035em] text-zinc-900">
-              Afrobeats Picnic
-            </p>
+          {/* Product preview */}
+          <div className="relative min-w-0">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[330px] w-[330px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-600/10 blur-[90px]"
+            />
 
-            <div className="mt-2 flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
-              <span className="text-[8px] font-medium text-zinc-400">
-                Lagos · 8:00 PM
-              </span>
-            </div>
+            <div className="relative mx-auto max-w-[430px] rounded-[25px] border border-white/10 bg-white/[0.035] p-4 sm:p-6">
+              <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600">
+                    <Ticket size={14} />
+                  </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
-              <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                Music
-              </span>
+                  <span className="text-[12px] font-bold tracking-[-0.04em]">
+                    tickety
+                    <span className="text-violet-400">
+                      .
+                    </span>
+                  </span>
+                </div>
 
-              <span className="text-[8px] font-semibold text-violet-600">
-                View event
-              </span>
-            </div>
-          </div>
-        </div>
+                <div className="flex items-center gap-1.5 text-white/40">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 
-        {/* Search / discovery chip */}
-        <div className="absolute -bottom-5 -left-5 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-[0_14px_35px_rgba(24,24,27,0.08)]">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-            <Compass size={12} strokeWidth={1.8} />
-          </div>
-
-          <span className="text-[8px] font-semibold text-zinc-600">
-            Events near you
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConversationVisual() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="w-[285px] sm:w-[310px]">
-        <div className="flex justify-start">
-          <div className="max-w-[195px] rounded-[17px] rounded-tl-[5px] border border-zinc-200 bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(24,24,27,0.05)]">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-950 text-white">
-                <MessageCircle size={10} strokeWidth={1.8} />
-              </div>
-
-              <span className="text-[7px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                Tickety
-              </span>
-            </div>
-
-            <p className="text-[9px] font-medium leading-4 text-zinc-600">
-              How many VIP tickets would you like?
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-3 flex justify-end">
-          <div className="max-w-[145px] rounded-[17px] rounded-tr-[5px] bg-zinc-950 px-3.5 py-3 text-white">
-            <p className="text-[9px] font-medium leading-4">
-              Two tickets, please.
-            </p>
-
-            <div className="mt-2 flex justify-end">
-              <span className="flex items-center gap-1 text-[6px] text-white/45">
-                Sent
-                <Check size={8} strokeWidth={2} />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3 flex justify-start">
-          <div className="max-w-[220px] rounded-[17px] rounded-tl-[5px] border border-zinc-200 bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(24,24,27,0.05)]">
-            <p className="text-[9px] font-medium text-zinc-600">
-              Perfect. Your total is:
-            </p>
-
-            <div className="mt-2.5 flex items-center justify-between rounded-xl bg-violet-50 px-2.5 py-2.5">
-              <span className="text-[7px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
-                2 × VIP
-              </span>
-
-              <span className="text-[10px] font-bold tracking-[-0.02em] text-violet-600">
-                ₦30,000
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 flex items-center justify-center gap-2">
-          <span className="h-1.5 w-6 rounded-full bg-violet-600" />
-          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
-          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TicketVisual() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <div className="relative w-[305px]">
-        <div className="relative overflow-hidden rounded-[20px] border border-zinc-200 bg-white shadow-[0_24px_55px_rgba(24,24,27,0.09)]">
-          <div className="flex min-h-[145px]">
-            <div className="flex w-[82px] shrink-0 flex-col items-center justify-center bg-violet-600 text-white">
-              <Ticket size={24} strokeWidth={1.5} />
-
-              <span className="mt-2 text-[7px] font-semibold uppercase tracking-[0.14em] text-white/55">
-                Tickety
-              </span>
-            </div>
-
-            <div className="flex flex-1 items-center justify-between px-4">
-              <div>
-                <p className="text-[7px] font-semibold uppercase tracking-[0.15em] text-zinc-400">
-                  Your ticket
-                </p>
-
-                <p className="mt-1.5 text-[15px] font-semibold tracking-[-0.04em] text-zinc-900">
-                  Afrobeats Picnic
-                </p>
-
-                <div className="mt-2.5 space-y-1">
-                  <p className="text-[7px] font-medium text-zinc-400">
-                    Saturday · 8:00 PM
-                  </p>
-
-                  <p className="text-[7px] font-medium text-zinc-400">
-                    Lagos · 2 × VIP
-                  </p>
+                  <span className="text-[9px] font-medium">
+                    Website experience
+                  </span>
                 </div>
               </div>
 
-              <MiniQR />
+              <StepVisual activeStep={activeStep} />
+
+              {/* Playback controls */}
+              <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-4">
+                <div className="flex items-center gap-2">
+                  {steps.map((step, index) => (
+                    <button
+                      key={step.number}
+                      type="button"
+                      onClick={() =>
+                        selectStep(index as StepIndex)
+                      }
+                      aria-label={`Preview ${step.label.toLowerCase()}`}
+                      className={[
+                        "h-1 rounded-full transition-all duration-300",
+                        activeStep === index
+                          ? "w-7 bg-violet-400"
+                          : "w-2 bg-white/20 hover:bg-white/40",
+                      ].join(" ")}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPlaying((current) => !current)
+                  }
+                  className="flex items-center gap-2 text-[10px] font-medium text-white/45 transition-colors hover:text-white"
+                  aria-label={
+                    playing
+                      ? "Pause timeline animation"
+                      : "Play timeline animation"
+                  }
+                >
+                  {playing ? (
+                    <Pause size={13} />
+                  ) : (
+                    <Play size={13} />
+                  )}
+
+                  {playing ? "Pause" : "Play"}
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="border-t border-dashed border-zinc-200 px-4 py-2.5">
-            <span className="text-[5px] font-semibold uppercase tracking-[0.14em] text-zinc-300">
-              #TCK-88213
-            </span>
-          </div>
         </div>
 
-        <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-[0_14px_35px_rgba(24,24,27,0.08)]">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-            <Check size={10} strokeWidth={2.5} />
-          </span>
+        {/* Footer */}
+        <div className="mt-16 flex flex-col gap-5 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2
+              size={16}
+              className="text-violet-400"
+            />
 
-          <span className="text-[8px] font-semibold text-zinc-600">
-            Ready for entry
-          </span>
+            <p className="text-[11px] font-medium text-white/50">
+              Discover on Tickety. Book on Tickety.
+              Experience it in person.
+            </p>
+          </div>
+
+          <Link
+            href="/explore"
+            className="group inline-flex items-center gap-2 text-[12px] font-semibold text-white transition-colors hover:text-violet-300"
+          >
+            Explore events
+
+            <ArrowRight
+              size={15}
+              className="transition-transform group-hover:translate-x-1"
+            />
+          </Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-function MiniQR() {
-  const pattern = [
-    1, 1, 0, 1, 1,
-    1, 0, 1, 0, 1,
-    0, 1, 1, 1, 0,
-    1, 0, 1, 0, 1,
-    1, 1, 0, 1, 1,
-  ];
-
-  return (
-    <div
-      aria-label="Ticket QR code preview"
-      className="grid h-10 w-10 shrink-0 grid-cols-5 gap-[1px] rounded-md border border-zinc-200 bg-white p-1"
-    >
-      {pattern.map((value, index) => (
-        <span
-          key={index}
-          className={value ? "bg-zinc-800" : "bg-transparent"}
-        />
-      ))}
-    </div>
+    </section>
   );
 }

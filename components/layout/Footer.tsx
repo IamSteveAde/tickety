@@ -89,8 +89,8 @@ export default function Footer() {
             {/* Description */}
             <div className="lg:pb-1">
               <p className="max-w-sm text-sm leading-7 text-white/45 sm:text-base sm:leading-7">
-                Discovery lives on the web. Checkout lives in WhatsApp. One
-                ticket engine underneath both.
+                Discover events, complete checkout, and manage attendance in one
+                simple Tickety experience.
               </p>
 
               <Link

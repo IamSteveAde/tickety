@@ -1,352 +1,602 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Sora } from "next/font/google";
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  CreditCard,
+  LockKeyhole,
+  MapPin,
+  Minus,
+  Plus,
+  ShieldCheck,
+  Ticket,
+} from "lucide-react";
 
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-sora",
-  display: "swap",
-});
+type BookingStep = "tickets" | "checkout" | "confirmed";
 
-type BubbleProps = {
-  children: ReactNode;
-  side?: "left" | "right";
-  className?: string;
+const EVENT = {
+  title: "The Lagos Experience",
+  date: "Saturday, 24 October",
+  time: "7:00 PM",
+  venue: "Victoria Island, Lagos",
+  ticketName: "General Admission",
+  price: 12500,
+  serviceFee: 1200,
 };
 
-function Bubble({
-  children,
-  side = "left",
-  className = "",
-}: BubbleProps) {
-  const [visible, setVisible] = useState(false);
+function formatNaira(amount: number) {
+  return `₦${amount.toLocaleString("en-NG")}`;
+}
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      setVisible(true);
-    });
+function StepIndicator({
+  step,
+}: {
+  step: BookingStep;
+}) {
+  const steps = [
+    { id: "tickets", label: "Tickets" },
+    { id: "checkout", label: "Checkout" },
+    { id: "confirmed", label: "Confirmed" },
+  ] as const;
 
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  const isRight = side === "right";
+  const activeIndex = steps.findIndex(
+    (item) => item.id === step
+  );
 
   return (
-    <div
-      className={[
-        "max-w-[88%] sm:max-w-[360px]",
-        isRight ? "ml-auto" : "mr-auto",
-        className,
-      ].join(" ")}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible
-          ? "translate3d(0, 0, 0) scale(1)"
-          : "translate3d(0, 16px, 0) scale(0.96)",
-        transition:
-          "opacity 420ms ease, transform 620ms cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
-    >
-      {children}
+    <div className="flex items-center gap-2">
+      {steps.map((item, index) => {
+        const completed = index < activeIndex;
+        const active = index === activeIndex;
+
+        return (
+          <div
+            key={item.id}
+            className="flex min-w-0 flex-1 items-center gap-2"
+          >
+            <div
+              className={[
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold transition-colors duration-300",
+                completed
+                  ? "bg-violet-600 text-white"
+                  : active
+                    ? "bg-violet-600 text-white"
+                    : "bg-zinc-100 text-zinc-400",
+              ].join(" ")}
+            >
+              {completed ? (
+                <Check size={12} strokeWidth={2.5} />
+              ) : (
+                index + 1
+              )}
+            </div>
+
+            <span
+              className={[
+                "truncate text-[10px] font-medium transition-colors duration-300 sm:text-[11px]",
+                active
+                  ? "text-zinc-900"
+                  : completed
+                    ? "text-zinc-600"
+                    : "text-zinc-400",
+              ].join(" ")}
+            >
+              {item.label}
+            </span>
+
+            {index < steps.length - 1 && (
+              <div
+                className={[
+                  "ml-auto hidden h-px min-w-2 flex-1 sm:block",
+                  completed
+                    ? "bg-violet-400"
+                    : "bg-zinc-200",
+                ].join(" ")}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function TicketyBubble({
+function Detail({
+  icon,
   children,
-  className = "",
 }: {
+  icon: ReactNode;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <Bubble
-      side="left"
-      className={[
-        "rounded-[24px] rounded-tl-[7px] border border-zinc-200/90 bg-white px-5 py-4 shadow-[0_18px_55px_rgba(24,24,27,0.09)]",
-        className,
-      ].join(" ")}
-    >
-      <div className="mb-2 flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-[9px] font-bold text-white">
-          T
-        </div>
-
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-          TICKETY
-        </span>
-      </div>
-
-      <div className="text-[13px] font-medium leading-[1.7] tracking-[-0.01em] text-zinc-700">{children}</div>
-    </Bubble>
+    <div className="flex min-w-0 items-center gap-2 text-[11px] text-zinc-500">
+      <span className="shrink-0 text-zinc-400">
+        {icon}
+      </span>
+      <span className="truncate">{children}</span>
+    </div>
   );
 }
 
-function UserBubble({ children }: { children: ReactNode }) {
+function PriceRow({
+  label,
+  value,
+  strong = false,
+}: {
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
   return (
-    <Bubble
-      side="right"
-      className="rounded-[24px] rounded-tr-[7px] bg-zinc-950 px-5 py-4 text-[13px] font-medium leading-[1.7] tracking-[-0.01em] text-white shadow-[0_18px_45px_rgba(24,24,27,0.16)]"
-    >
-      {children}
-    </Bubble>
-  );
-}
+    <div className="flex items-center justify-between gap-3">
+      <span
+        className={
+          strong
+            ? "text-[12px] font-semibold text-zinc-900"
+            : "text-[11px] text-zinc-500"
+        }
+      >
+        {label}
+      </span>
 
-function TypingBubble() {
-  return (
-    <Bubble
-      side="left"
-      className="rounded-[22px] rounded-tl-[7px] border border-zinc-200/90 bg-white px-5 py-4 shadow-[0_18px_55px_rgba(24,24,27,0.08)]"
-    >
-      <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-[9px] font-bold text-white">
-          T
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" />
-        </div>
-      </div>
-    </Bubble>
-  );
-}
-
-function MiniTicket() {
-  return (
-    <div className="mt-4 overflow-hidden rounded-2xl border border-violet-100 bg-violet-50/70">
-      <div className="flex items-center gap-3 p-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white">
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="h-5 w-5"
-          >
-            <path
-              d="M7 4v2M17 4v2M4 9h16M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        <div className="min-w-0">
-          <p className="truncate text-[12px] font-semibold tracking-[-0.02em] text-zinc-800">
-            The Experience
-          </p>
-
-          <p className="mt-0.5 text-[10px] font-medium tracking-[-0.01em] text-zinc-500">
-            VIP · 2 tickets
-          </p>
-        </div>
-
-        <div className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white">
-          <div className="grid grid-cols-4 gap-[2px]">
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-white" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-
-            <span className="h-1.5 w-1.5 bg-white" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-white" />
-
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-white" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-white" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-            <span className="h-1.5 w-1.5 bg-zinc-900" />
-          </div>
-        </div>
-      </div>
+      <span
+        className={
+          strong
+            ? "text-[15px] font-bold tracking-[-0.04em] text-zinc-950"
+            : "text-[11px] font-medium text-zinc-700"
+        }
+      >
+        {value}
+      </span>
     </div>
   );
 }
 
 export default function HeroConversation() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] =
+    useState<BookingStep>("tickets");
+
+  const [quantity, setQuantity] = useState(2);
+
+  const [autoPlay, setAutoPlay] = useState(true);
+
+  const ticketTotal = EVENT.price * quantity;
+  const grandTotal =
+    ticketTotal + EVENT.serviceFee;
 
   useEffect(() => {
-    const delays = [
-      1900,
-      1500,
-      1100,
-      2200,
-      1400,
-      5200,
-    ];
+    if (!autoPlay) return;
+
+    const delay =
+      step === "tickets"
+        ? 3600
+        : step === "checkout"
+          ? 3500
+          : 4200;
 
     const timeout = window.setTimeout(() => {
-      setStep((current) => (current >= 5 ? 0 : current + 1));
-    }, delays[step]);
+      setStep((current) => {
+        if (current === "tickets") {
+          return "checkout";
+        }
+
+        if (current === "checkout") {
+          return "confirmed";
+        }
+
+        return "tickets";
+      });
+    }, delay);
 
     return () => window.clearTimeout(timeout);
-  }, [step]);
+  }, [step, autoPlay]);
+
+  function changeStep(next: BookingStep) {
+    setAutoPlay(false);
+    setStep(next);
+  }
 
   return (
-<div
-      className={`${sora.variable} absolute inset-x-0 top-1/2 mx-auto w-full max-w-[520px] -translate-y-[44%] px-3 sm:px-6`}
-      style={{ fontFamily: "var(--font-sora)" }}
-    >
-      {/* =========================================================
-          CONTEXT LABEL
-      ========================================================= */}
-      <div className="mb-5 ml-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-400 sm:mb-6 sm:ml-8">
-        <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+    <div className="relative mx-auto w-full max-w-[490px] px-3 sm:px-4">
+      {/* Small section label */}
+      <div className="mb-4 flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
 
-        <span>A better way to get your ticket</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.17em] text-zinc-500">
+            The Tickety experience
+          </span>
+        </div>
+
+        <span className="text-[10px] font-medium text-zinc-400">
+          A simpler way to book
+        </span>
       </div>
 
-      {/* =========================================================
-          CONVERSATION STAGE
-          
-          IMPORTANT:
-          The height now accounts for the entire final ticket.
-          This prevents the following section from cutting through
-          the conversation on smaller screens.
-      ========================================================= */}
-      <div
-        className="
-          relative
-          min-h-[650px]
-          sm:min-h-[610px]
-          lg:min-h-[500px]
-        "
-      >
-        {/* =======================================================
-            MESSAGE 1
-        ======================================================= */}
-        {step >= 0 && (
-          <div className="absolute left-0 top-0 w-[88%] sm:left-[5%] sm:w-[72%]">
-            <TicketyBubble>
-              <p>
-                Hi Ada 👋
-                <br />
+      {/* Main booking interface — height stays constant */}
+      <div className="overflow-hidden rounded-[22px] border border-zinc-200 bg-white shadow-[0_18px_65px_-35px_rgba(24,24,27,0.24)]">
+        {/* Browser header */}
+        <div className="flex h-[45px] items-center justify-between border-b border-zinc-100 px-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-violet-600 text-white">
+              <Ticket size={13} strokeWidth={2} />
+            </div>
 
-                <span className="text-zinc-500">
-                  I found something you might love.
-                </span>
-              </p>
-
-              <div className="mt-3 rounded-xl bg-zinc-50 px-3 py-2.5">
-                <p className="text-[12px] font-semibold tracking-[-0.02em] text-zinc-800">
-                  The Experience
-                </p>
-
-                <p className="mt-0.5 text-[10px] font-medium tracking-[-0.01em] text-zinc-500">
-                  Saturday · Lagos
-                </p>
-              </div>
-            </TicketyBubble>
+            <span className="text-[12px] font-bold tracking-[-0.035em] text-zinc-900">
+              tickety
+              <span className="text-violet-600">.</span>
+            </span>
           </div>
-        )}
 
-        {/* =======================================================
-            MESSAGE 2
-        ======================================================= */}
-        {step >= 1 && (
-          <div className="absolute right-0 top-[120px] w-[76%] sm:right-[4%] sm:w-[62%]">
-            <UserBubble>
-              I&apos;d like two VIP tickets.
-            </UserBubble>
+          <div className="flex items-center gap-1.5 rounded-md bg-zinc-50 px-2.5 py-1.5">
+            <LockKeyhole
+              size={10}
+              className="text-zinc-400"
+            />
+
+            <span className="text-[9px] font-medium text-zinc-500">
+              Secure booking
+            </span>
           </div>
-        )}
+        </div>
 
-        {/* =======================================================
-            TYPING
-        ======================================================= */}
-        {step === 2 && (
-          <div className="absolute left-[3%] top-[192px] w-[58%] sm:left-[10%]">
-            <TypingBubble />
-          </div>
-        )}
+        {/* Progress */}
+        <div className="border-b border-zinc-100 px-5 py-4 sm:px-6">
+          <StepIndicator step={step} />
+        </div>
 
-        {/* =======================================================
-            MESSAGE 3
-        ======================================================= */}
-        {step >= 3 && (
-          <div className="absolute left-0 top-[192px] w-[90%] sm:left-[5%] sm:w-[72%]">
-            <TicketyBubble>
-              <p>
-                Perfect.{" "}
-                <span className="font-semibold tracking-[-0.025em] text-zinc-900">
-                  2 × VIP = ₦30,000.
-                </span>
-              </p>
-
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-violet-50 px-3.5 py-3">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-violet-500">
-                    Total
-                  </p>
-
-                  <p className="text-[15px] font-bold tracking-[-0.03em] text-zinc-900">
-                    ₦30,000
-                  </p>
-                </div>
-
-                <div className="shrink-0 rounded-full bg-violet-600 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.04em] text-white">
-                  Pay securely
-                </div>
-              </div>
-            </TicketyBubble>
-          </div>
-        )}
-
-        {/* =======================================================
-            MESSAGE 4
-        ======================================================= */}
-        {step >= 4 && (
-          <div className="absolute right-0 top-[325px] w-[66%] sm:right-[4%] sm:w-[52%]">
-            <UserBubble>Paid ✓</UserBubble>
-          </div>
-        )}
-
-        {/* =======================================================
-            MESSAGE 5
-        ======================================================= */}
-        {step >= 5 && (
-          <div className="absolute left-0 top-[390px] w-[92%] sm:left-[5%] sm:w-[72%]">
-            <TicketyBubble>
-              <p className="font-semibold tracking-[-0.025em] text-zinc-900">
-                ✓ You&apos;re all set 🎉
-              </p>
-
-              <p className="mt-1 text-[12px] font-medium leading-5 tracking-[-0.01em] text-zinc-500">
-                Your tickets are ready.
-              </p>
-
-              <MiniTicket />
-            </TicketyBubble>
-          </div>
-        )}
-      </div>
-
-      {/* =========================================================
-          PROGRESS
-      ========================================================= */}
-      <div className="mt-2 flex items-center justify-center gap-1.5 sm:mt-5">
-        {[0, 1, 2, 3, 4, 5].map((item) => (
-          <span
-            key={item}
+        {/*
+          CRITICAL:
+          This fixed-height viewport prevents layout shifts.
+          All three screens occupy the same space.
+        */}
+        <div className="relative h-[400px] overflow-hidden sm:h-[405px]">
+          {/* STEP 1 — SELECT TICKETS */}
+          <div
+            aria-hidden={step !== "tickets"}
             className={[
-              "h-1 rounded-full transition-all duration-500",
-              item <= step
-                ? "w-5 bg-violet-500"
-                : "w-1.5 bg-zinc-200",
+              "absolute inset-0 flex flex-col px-5 py-5 transition-all duration-500 ease-out sm:px-6",
+              step === "tickets"
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none -translate-x-5 opacity-0",
             ].join(" ")}
-          />
-        ))}
+          >
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-600">
+                Select your tickets
+              </p>
+
+              <h3 className="mt-2 text-[21px] font-semibold leading-tight tracking-[-0.055em] text-zinc-950 sm:text-[23px]">
+                {EVENT.title}
+              </h3>
+
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                <Detail
+                  icon={<CalendarDays size={13} />}
+                >
+                  {EVENT.date}
+                </Detail>
+
+                <Detail
+                  icon={<MapPin size={13} />}
+                >
+                  {EVENT.venue}
+                </Detail>
+              </div>
+            </div>
+
+            <div className="mt-6 border-y border-zinc-100 py-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
+
+                    <p className="text-[13px] font-semibold tracking-[-0.02em] text-zinc-900">
+                      {EVENT.ticketName}
+                    </p>
+                  </div>
+
+                  <p className="mt-1.5 pl-3.5 text-[11px] text-zinc-500">
+                    {formatNaira(EVENT.price)} per ticket
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <button
+                    type="button"
+                    aria-label="Remove one ticket"
+                    disabled={quantity <= 1}
+                    onClick={() => {
+                      setAutoPlay(false);
+                      setQuantity((current) =>
+                        Math.max(1, current - 1)
+                      );
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <Minus size={13} />
+                  </button>
+
+                  <span className="w-3 text-center text-[13px] font-semibold text-zinc-900">
+                    {quantity}
+                  </span>
+
+                  <button
+                    type="button"
+                    aria-label="Add one ticket"
+                    disabled={quantity >= 10}
+                    onClick={() => {
+                      setAutoPlay(false);
+                      setQuantity((current) =>
+                        Math.min(10, current + 1)
+                      );
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <PriceRow
+                label={`${quantity} × ${EVENT.ticketName}`}
+                value={formatNaira(ticketTotal)}
+              />
+
+              <PriceRow
+                label="Service fee"
+                value={formatNaira(EVENT.serviceFee)}
+              />
+
+              <div className="border-t border-zinc-100 pt-3">
+                <PriceRow
+                  label="Total"
+                  value={formatNaira(grandTotal)}
+                  strong
+                />
+              </div>
+            </div>
+
+            <div className="mt-auto">
+              <button
+                type="button"
+                onClick={() => changeStep("checkout")}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 text-[12px] font-semibold text-white transition-colors hover:bg-violet-700"
+              >
+                Continue to checkout
+                <ArrowRight size={14} />
+              </button>
+
+              <p className="mt-3 text-center text-[10px] text-zinc-400">
+                Choose your tickets. Checkout in minutes.
+              </p>
+            </div>
+          </div>
+
+          {/* STEP 2 — CHECKOUT */}
+          <div
+            aria-hidden={step !== "checkout"}
+            className={[
+              "absolute inset-0 flex flex-col px-5 py-5 transition-all duration-500 ease-out sm:px-6",
+              step === "checkout"
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none translate-x-5 opacity-0",
+            ].join(" ")}
+          >
+            <div>
+              <button
+                type="button"
+                onClick={() => changeStep("tickets")}
+                className="mb-4 flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+              >
+                <ArrowLeft size={12} />
+                Back to tickets
+              </button>
+
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-600">
+                Almost there
+              </p>
+
+              <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.055em] text-zinc-950">
+                Review your booking.
+              </h3>
+
+              <p className="mt-1.5 text-[11px] leading-5 text-zinc-500">
+                Everything in one place, before you pay.
+              </p>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-zinc-200 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                  <Ticket size={19} />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[12px] font-semibold tracking-[-0.025em] text-zinc-900">
+                    {EVENT.title}
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-zinc-500">
+                    {EVENT.date} · {EVENT.time}
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-zinc-500">
+                    {quantity} × {EVENT.ticketName}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <PriceRow
+                label="Tickets"
+                value={formatNaira(ticketTotal)}
+              />
+
+              <PriceRow
+                label="Service fee"
+                value={formatNaira(EVENT.serviceFee)}
+              />
+
+              <div className="border-t border-zinc-100 pt-3">
+                <PriceRow
+                  label="Amount to pay"
+                  value={formatNaira(grandTotal)}
+                  strong
+                />
+              </div>
+            </div>
+
+            <div className="mt-auto">
+              <button
+                type="button"
+                onClick={() => changeStep("confirmed")}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 text-[12px] font-semibold text-white transition-colors hover:bg-violet-700"
+              >
+                <CreditCard size={15} />
+                Preview confirmation
+                <ArrowRight size={13} />
+              </button>
+
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-zinc-400">
+                <ShieldCheck size={12} />
+
+                <span className="text-[10px]">
+                  Payments are processed securely
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 3 — CONFIRMATION */}
+          <div
+            aria-hidden={step !== "confirmed"}
+            className={[
+              "absolute inset-0 flex flex-col px-5 py-5 transition-all duration-500 ease-out sm:px-6",
+              step === "confirmed"
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none translate-x-5 opacity-0",
+            ].join(" ")}
+          >
+            <div className="flex flex-col items-center pt-3 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <CheckCircle2
+                  size={29}
+                  strokeWidth={1.7}
+                />
+              </div>
+
+              <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-600">
+                Booking preview
+              </p>
+
+              <h3 className="mt-2 text-[23px] font-semibold tracking-[-0.055em] text-zinc-950">
+                You&apos;re all set.
+              </h3>
+
+              <p className="mt-1.5 max-w-[260px] text-[11px] leading-5 text-zinc-500">
+                After a successful payment, your tickets
+                are available directly on Tickety.
+              </p>
+            </div>
+
+            <div className="mt-5 overflow-hidden rounded-xl border border-zinc-200">
+              <div className="flex items-center gap-3 p-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                  <Ticket size={21} strokeWidth={1.7} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-semibold text-zinc-900">
+                    {EVENT.title}
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-zinc-500">
+                    {quantity} × {EVENT.ticketName}
+                  </p>
+                </div>
+
+                <CheckCircle2
+                  size={17}
+                  className="shrink-0 text-emerald-600"
+                />
+              </div>
+
+              <div className="flex items-center justify-between border-t border-dashed border-zinc-200 bg-zinc-50/70 px-4 py-3">
+                <span className="text-[10px] text-zinc-500">
+                  Booking total
+                </span>
+
+                <span className="text-[12px] font-bold text-zinc-900">
+                  {formatNaira(grandTotal)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-auto">
+              <button
+                type="button"
+                onClick={() => changeStep("tickets")}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 text-[12px] font-semibold text-white transition-colors hover:bg-violet-700"
+              >
+                Explore booking again
+                <ArrowRight size={14} />
+              </button>
+
+              <p className="mt-3 text-center text-[10px] text-zinc-400">
+                Your event. Your tickets. One website.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer — outside fixed-height card */}
+      <div className="mt-4 flex items-center justify-between px-1">
+        <div className="flex items-center gap-1.5">
+          {(
+            [
+              "tickets",
+              "checkout",
+              "confirmed",
+            ] as BookingStep[]
+          ).map((item) => (
+            <button
+              key={item}
+              type="button"
+              aria-label={`Show ${item} preview`}
+              aria-current={
+                step === item ? "step" : undefined
+              }
+              onClick={() => changeStep(item)}
+              className={[
+                "h-1 rounded-full transition-all duration-300",
+                step === item
+                  ? "w-6 bg-violet-600"
+                  : "w-2 bg-zinc-200 hover:bg-zinc-300",
+              ].join(" ")}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1.5 text-zinc-400">
+          <ShieldCheck size={12} />
+
+          <span className="text-[10px] font-medium">
+            Built for seamless booking
+          </span>
+        </div>
       </div>
     </div>
   );

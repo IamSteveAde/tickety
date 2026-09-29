@@ -231,7 +231,7 @@ export default function PayListingFeeButton({
 
             <Benefit text="Attendees can discover and book" />
 
-            <Benefit text="WhatsApp ticket flow is activated" />
+            <Benefit text="Platform ticket flow is activated" />
           </div>
 
           {/* Payment button */}

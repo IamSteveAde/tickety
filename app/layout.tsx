@@ -21,9 +21,9 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Tickety.africa — Event ticketing, reimagined as a conversation",
+  title: "Tickety.africa — Event ticketing, built for easy discovery and checkout",
   description:
-    "Discover events on the web. Get your ticket, receipt, and QR code in a WhatsApp chat.",
+    "Discover events, choose your ticket, and complete checkout on the Tickety platform.",
 };
 
 export default function RootLayout({

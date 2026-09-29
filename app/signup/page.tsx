@@ -115,7 +115,7 @@ export default function SignupPage() {
             <div className="mt-10 space-y-4">
               <Benefit text="Create and publish events in minutes" />
               <Benefit text="Manage tickets and attendee information" />
-              <Benefit text="Let attendees receive tickets through WhatsApp" />
+              <Benefit text="Let attendees discover, book, and receive tickets on the platform" />
             </div>
 
             <div className="mt-10 flex items-center gap-3 text-[10px] uppercase tracking-[0.14em] text-white/20">
