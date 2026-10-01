@@ -130,7 +130,7 @@ export default function EventStaffManager({
       }
 
       setSuccess(
-        "Invitation created. Copy the invitation link and send it to the staff member."
+        "Invitation created and email queued. You can also copy the invitation link."
       );
 
       setInvitationUrl(data.invitationUrl || "");

@@ -1,3 +1,4 @@
+import { eventInstant, DEFAULT_EVENT_TIMEZONE } from "@/lib/email/schedule";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -95,24 +96,14 @@ export async function POST(request: NextRequest) {
    * ------------------------------------------------------------
    */
 
-  const eventStart = new Date(
-    `${body.date}T${body.startTime}:00`
-  );
-
-  const eventEnd = new Date(
-    `${body.date}T${body.endTime}:00`
-  );
-
-  if (
-    Number.isNaN(eventStart.getTime()) ||
-    Number.isNaN(eventEnd.getTime())
-  ) {
-    return NextResponse.json(
-      {
-        error: "Please provide a valid event date, start time and end time.",
-      },
-      { status: 400 }
-    );
+  const timezone = typeof body.timezone === "string" ? body.timezone : DEFAULT_EVENT_TIMEZONE;
+  let eventStart: Date;
+  let eventEnd: Date;
+  try {
+    eventStart = eventInstant(String(body.date), String(body.startTime), timezone);
+    eventEnd = eventInstant(String(body.date), String(body.endTime), timezone);
+  } catch {
+    return NextResponse.json({ error: "Please provide a valid event date, start time, end time and timezone." }, { status: 400 });
   }
 
   if (eventEnd <= eventStart) {
@@ -275,6 +266,7 @@ export async function POST(request: NextRequest) {
       date: String(body.date),
       startTime: String(body.startTime),
       endTime: String(body.endTime),
+      timezone,
       category: String(body.category).trim(),
       organiserId: session.user.id,
 

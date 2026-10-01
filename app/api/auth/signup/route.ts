@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { enqueueEmail } from "@/lib/email/queue";
 
 export async function POST(request: NextRequest) {
   const { name, email, password } = await request.json();
@@ -18,8 +19,12 @@ export async function POST(request: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { name, email, passwordHash, role: "ORGANISER" },
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: { name, email, passwordHash, role: "ORGANISER" },
+    });
+    await enqueueEmail(tx, { dedupeKey: `welcome/${created.id}`, kind: "welcome", recipient: created.email, userId: created.id });
+    return created;
   });
 
   return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });

@@ -34,6 +34,7 @@ model Event {
   date          DateTime
   startTime     String
   endTime       String
+  timezone      String      @default("Africa/Lagos")
   category      String
   status        EventStatus @default(live)
   featured      Boolean     @default(false)
@@ -57,6 +58,8 @@ model Event {
   listingFeePayment ListingFeePayment?
   orders            Order[]
   ticketTypes       TicketType[]
+  emailNotifications EmailNotification[]
+  emailPreferences   EventEmailPreference[]
 
   @@index([state])
   @@index([category])
@@ -225,6 +228,87 @@ model ListingFeePayment {
   createdAt   DateTime      @default(now())
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+// Transactional outbox: queued in the same transaction as ticket issuance.
+model EmailNotification {
+  id              String   @id @default(cuid())
+  dedupeKey       String   @unique
+  kind            String
+  recipient       String
+  eventId         String?
+  orderId         String?
+  userId          String?
+  invitationId    String?
+  preferenceId    String?
+  context         Json?
+  payload         Json?
+  scheduledAt     DateTime @default(now())
+  availableAt     DateTime @default(now())
+  expiresAt       DateTime?
+  status          String   @default("queued")
+  attempts        Int      @default(0)
+  lockToken       String?
+  lockedUntil     DateTime?
+  firstAttemptAt  DateTime?
+  providerId      String?  @unique
+  deliveryStatus  String?
+  deliveryUpdatedAt DateTime?
+  sentAt          DateTime?
+  lastError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([orderId])
+  @@index([eventId, kind])
+}
+
+model EventEmailPreference {
+  id             String   @id @default(cuid())
+  eventId        String
+  email          String
+  verifiedAt     DateTime?
+  verificationToken String @unique @default(uuid())
+  verificationExpiresAt DateTime?
+  confirmationRequestedAt DateTime?
+  token          String   @unique @default(uuid())
+  unsubscribedAt DateTime?
+  createdAt      DateTime @default(now())
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, email])
+}
+
+model EmailSuppression {
+  email     String   @id
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+model EmailWorkerLease {
+  id          String   @id
+  token       String?
+  lockedUntil DateTime @default(now())
+}
+
+model EmailDeliveryEvent {
+  id         String   @id
+  providerId String
+  status     String
+  occurredAt DateTime
+
+  @@index([providerId, occurredAt])
+}
+
+model EmailSubscriptionRateLimit {
+  key       String   @id
+  requests  Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 enum Role {

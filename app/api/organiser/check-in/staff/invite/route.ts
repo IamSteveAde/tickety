@@ -4,6 +4,8 @@ import crypto from "crypto";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { enqueueEmail } from "@/lib/email/queue";
+import { appUrl } from "@/lib/email/templates";
 
 function hashToken(token: string) {
   return crypto
@@ -167,22 +169,13 @@ export async function POST(request: Request) {
       Date.now() + 7 * 24 * 60 * 60 * 1000
     );
 
-    await prisma.staffInvitation.create({
-      data: {
-        email,
-        eventId: event.id,
-        invitedById: session.user.id,
-        tokenHash,
-        expiresAt,
-      },
+    const inviteUrl = appUrl(`/staff/accept-invite?token=${token}`);
+    await prisma.$transaction(async (tx) => {
+      const invitation = await tx.staffInvitation.create({
+        data: { email, eventId: event.id, invitedById: session.user.id, tokenHash, expiresAt },
+      });
+      await enqueueEmail(tx, { dedupeKey: `staff-invite/${invitation.id}`, kind: "staff_invitation", recipient: email, eventId: event.id, invitationId: invitation.id, expiresAt, context: { inviteUrl } });
     });
-
-    const baseUrl =
-      process.env.NEXTAUTH_URL ??
-      "http://localhost:3000";
-
-    const inviteUrl =
-      `${baseUrl}/staff/accept-invite?token=${token}`;
 
     return NextResponse.json({
       success: true,

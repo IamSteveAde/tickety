@@ -8,6 +8,7 @@ import { getEventById, getAttendeesForEventId } from "@/lib/data";
 import { formatNaira, ticketsLeft } from "@/lib/utils";
 import { Ticket, Wallet, QrCode, Armchair } from "lucide-react";
 import Link from "next/link";
+import EventShareLink from "@/components/organiser/EventShareLink";
 import EventStaffManager from "@/components/organiser/EventStaffManager";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +60,10 @@ export default async function OrganiserEventDashboardPage({
           >
             Open gate check-in
           </Link>
+        </div>
+        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5">
+          <EventShareLink slug={event.slug} />
+
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard label="Tickets sold" value={ticketsSold.toString()} icon={<Ticket size={18} />} />

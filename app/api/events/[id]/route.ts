@@ -1,3 +1,4 @@
+import { eventInstant } from "@/lib/email/schedule";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -66,6 +67,8 @@ export async function PUT(
     },
     select: {
       id: true,
+      endTime: true,
+      timezone: true,
     },
   });
 
@@ -96,6 +99,16 @@ export async function PUT(
           { status: 400 }
         );
       }
+    }
+
+    const timezone = typeof body.timezone === "string" ? body.timezone : event.timezone;
+    const endTime = typeof body.endTime === "string" ? body.endTime : event.endTime;
+    try {
+      const start = eventInstant(String(body.date), String(body.startTime), timezone);
+      const end = eventInstant(String(body.date), endTime, timezone);
+      if (end <= start) throw new Error("End time must be after start time");
+    } catch {
+      return NextResponse.json({ error: "Provide valid start and end times and an event timezone. End time must be after start time." }, { status: 400 });
     }
 
     const tags =
@@ -170,6 +183,8 @@ export async function PUT(
         venue: String(body.venue).trim(),
         date: String(body.date),
         startTime: String(body.startTime),
+        endTime,
+        timezone,
         category: String(body.category).trim(),
         coverImageUrl: body.coverImageUrl
           ? String(body.coverImageUrl)

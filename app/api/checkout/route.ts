@@ -1,3 +1,4 @@
+import { eventInstant } from "@/lib/email/schedule";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
@@ -29,21 +30,14 @@ type CheckoutBody = {
 
 const ORDER_EXPIRY_MINUTES = 15;
 
-function getEventEndDate(event: {
-  date: Date;
-  endTime: string;
-}): Date {
-  const [hours, minutes] = event.endTime.split(":").map(Number);
-
-  const endDate = new Date(event.date);
-  endDate.setHours(hours, minutes, 0, 0);
-
-  return endDate;
+function getEventEndDate(event: { date: Date; endTime: string; timezone?: string }): Date {
+  return eventInstant(event.date, event.endTime, event.timezone);
 }
 
 function hasEventEnded(event: {
   date: Date;
   endTime: string;
+  timezone?: string;
 }): boolean {
   return getEventEndDate(event) <= new Date();
 }

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { TICKET_COMMISSION_PERCENT } from "@/lib/constants";
+import { enqueueBookingEmails, dispatchBookingEmails } from "@/lib/email/queue";
 
 type StoredCustomAnswer = {
   questionId: string;
@@ -86,6 +87,7 @@ export async function completeTicketOrder(
        * If this order has already been completed, simply return it.
        */
       if (order.status === "paid") {
+        await enqueueBookingEmails(tx, order.id);
         return order;
       }
 
@@ -312,6 +314,7 @@ export async function completeTicketOrder(
        * -----------------------------------------------------------
        */
 
+      await enqueueBookingEmails(tx, order.id);
       return tx.order.findUniqueOrThrow({
         where: {
           id: order.id,
@@ -337,6 +340,7 @@ export async function completeTicketOrder(
     }
   );
 
+  if (result) await dispatchBookingEmails(result.id);
   return result;
 }
 
@@ -376,6 +380,7 @@ export async function completeFreeTicketOrder(
         order.status === "paid" &&
         order.attendees.length > 0
       ) {
+        await enqueueBookingEmails(tx, order.id);
         return order;
       }
 
@@ -489,6 +494,7 @@ export async function completeFreeTicketOrder(
         }
       }
 
+      await enqueueBookingEmails(tx, order.id);
       return tx.order.findUniqueOrThrow({
         where: {
           id: order.id,
@@ -514,5 +520,6 @@ export async function completeFreeTicketOrder(
     }
   );
 
+  if (result) await dispatchBookingEmails(result.id);
   return result;
 }

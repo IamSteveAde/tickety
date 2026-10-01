@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import EventTimezoneSelect from "@/components/organiser/EventTimezoneSelect";
 import CoverImageUpload from "@/components/organiser/CoverImageUpload";
 import { NIGERIAN_STATES, EVENT_CATEGORIES } from "@/lib/utils";
 
@@ -42,6 +43,8 @@ type EventData = {
   state: string;
   date: string;
   startTime: string;
+  endTime: string;
+  timezone: string;
   category: string;
   description: string;
   coverImageUrl: string;
@@ -64,6 +67,8 @@ export default function EditEventForm({
   const [state, setState] = useState(event.state);
   const [date, setDate] = useState(event.date);
   const [startTime, setStartTime] = useState(event.startTime);
+  const [endTime, setEndTime] = useState(event.endTime);
+  const [timezone, setTimezone] = useState(event.timezone);
   const [category, setCategory] = useState(event.category);
   const [description, setDescription] = useState(event.description);
   const [coverImageUrl, setCoverImageUrl] = useState(
@@ -185,6 +190,8 @@ export default function EditEventForm({
           state,
           date,
           startTime,
+          endTime,
+          timezone,
           category,
           description,
           coverImageUrl,
@@ -339,6 +346,11 @@ export default function EditEventForm({
                 className={inputClass}
               />
             </Field>
+
+            <Field label="End time" required icon={<Clock3 size={13} />}>
+              <input required type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputClass} />
+            </Field>
+            <EventTimezoneSelect value={timezone} onChange={setTimezone} />
 
             <Field label="Category" required>
               <select

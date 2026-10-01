@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { enqueueEmail } from "@/lib/email/queue";
+import { appUrl } from "@/lib/email/templates";
 
 export const dynamic = "force-dynamic";
 
@@ -306,38 +308,19 @@ export async function POST(
       Date.now() + 48 * 60 * 60 * 1000
     );
 
-    const invitation = await prisma.staffInvitation.create({
-      data: {
-        email,
-        eventId: event.id,
-        invitedById: session.user.id,
-        tokenHash,
-        expiresAt,
-      },
-      select: {
-        id: true,
-        email: true,
-        expiresAt: true,
-      },
+    const invitationUrl = appUrl(`/staff/invite/${rawToken}`);
+    const invitation = await prisma.$transaction(async (tx) => {
+      const created = await tx.staffInvitation.create({
+        data: { email, eventId: event.id, invitedById: session.user.id, tokenHash, expiresAt },
+        select: { id: true, email: true, expiresAt: true },
+      });
+      await enqueueEmail(tx, { dedupeKey: `staff-invite/${created.id}`, kind: "staff_invitation", recipient: email, eventId: event.id, invitationId: created.id, expiresAt, context: { inviteUrl: invitationUrl } });
+      return created;
     });
-
-    /*
-     * We are returning the invitation URL for now.
-     *
-     * Later, when we connect email delivery, this URL
-     * will be sent directly to the staff member.
-     */
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      "http://localhost:3000";
-
-    const invitationUrl =
-      `${baseUrl}/staff/invite/${rawToken}`;
 
     return NextResponse.json(
       {
-        message: "Staff invitation created.",
+        message: "Staff invitation created and email queued.",
         invitation,
         invitationUrl,
       },

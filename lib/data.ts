@@ -1,4 +1,6 @@
+import { eventInstant } from "@/lib/email/schedule";
 import { prisma } from "@/lib/db";
+import { enqueueEmail, rescheduleEventEmails } from "@/lib/email/queue";
 import {
   EventItem,
   EventCategory,
@@ -29,22 +31,15 @@ const COVER_GRADIENTS = [
   "from-leaf-600 via-plum-600 to-plum-800",
 ];
 
-function getEventEndDate(event: {
-  date: Date;
-  endTime: string;
-}): Date {
-  const [hours, minutes] = event.endTime.split(":").map(Number);
-
-  const endDate = new Date(event.date);
-  endDate.setHours(hours, minutes, 0, 0);
-
-  return endDate;
+function getEventEndDate(event: { date: Date; endTime: string; timezone?: string }): Date {
+  return eventInstant(event.date, event.endTime, event.timezone);
 }
 
 function isEventCurrentlyPublic(event: {
   status: string;
   date: Date;
   endTime: string;
+  timezone?: string;
 }): boolean {
   if (event.status !== "live") {
     return false;
@@ -88,6 +83,8 @@ function mapEvent(event: EventWithRelations): EventItem {
     date: event.date.toISOString().slice(0, 10),
     startTime: event.startTime,
     endTime: event.endTime,
+    timezone: event.timezone,
+    status: event.status,
     category: event.category as EventCategory,
     organiserName: event.organiser.name,
     organiserId: event.organiserId,
@@ -410,6 +407,7 @@ export async function getEventsByOrganiserId(
     date: event.date.toISOString().slice(0, 10),
     startTime: event.startTime,
     endTime: event.endTime,
+    timezone: event.timezone,
 
     ticketsSold: event.attendees.length,
     gross: paidAttendees.reduce(
@@ -485,6 +483,7 @@ interface CreateEventInput {
   date: string;
   startTime: string;
   endTime: string;
+  timezone?: string;
   category: string;
   organiserId: string;
   status?: "live" | "pending" | "disabled";
@@ -507,43 +506,48 @@ interface CreateEventInput {
 export async function createEvent(
   input: CreateEventInput
 ): Promise<EventItem> {
-  const event = await prisma.event.create({
-    data: {
-      title: input.title,
-      slug: input.slug,
-      description: input.description,
-      state: input.state,
-      venue: input.venue,
-      date: new Date(input.date),
-      startTime: input.startTime,
-       endTime: input.endTime,
-      category: input.category,
-      organiserId: input.organiserId,
-      status: input.status ?? "live",
-      coverGradient:
-        input.coverGradient ?? randomCoverGradient(),
-      coverImageUrl: input.coverImageUrl,
-      tags: input.tags ?? [],
-      refundPolicy: input.refundPolicy,
-      minAge: input.minAge,
+  const event = await prisma.$transaction(async (tx) => {
+    const created = await tx.event.create({
+      data: {
+        title: input.title,
+        slug: input.slug,
+        description: input.description,
+        state: input.state,
+        venue: input.venue,
+        date: new Date(input.date),
+        startTime: input.startTime,
+        endTime: input.endTime,
+        timezone: input.timezone ?? "Africa/Lagos",
+        category: input.category,
+        organiserId: input.organiserId,
+        status: input.status ?? "live",
+        coverGradient:
+          input.coverGradient ?? randomCoverGradient(),
+        coverImageUrl: input.coverImageUrl,
+        tags: input.tags ?? [],
+        refundPolicy: input.refundPolicy,
+        minAge: input.minAge,
 
-      ticketTypes: {
-        create: input.ticketTypes.map((ticket) => ({
-          name: ticket.name,
-          price: ticket.price,
-          quantityTotal: ticket.quantityTotal,
-        })),
+        ticketTypes: {
+          create: input.ticketTypes.map((ticket) => ({
+            name: ticket.name,
+            price: ticket.price,
+            quantityTotal: ticket.quantityTotal,
+          })),
+        },
+
+        customQuestions: {
+          create: input.customQuestions.map((question) => ({
+            label: question.label,
+            required: question.required ?? false,
+          })),
+        },
       },
 
-      customQuestions: {
-        create: input.customQuestions.map((question) => ({
-          label: question.label,
-          required: question.required ?? false,
-        })),
-      },
-    },
-
-    include: eventInclude,
+      include: eventInclude,
+    });
+    await enqueueEmail(tx, { dedupeKey: `event-created/${created.id}`, kind: "event_created", recipient: created.organiser.email, eventId: created.id });
+    return created;
   });
 
   return mapEvent(event);
@@ -563,33 +567,37 @@ export async function markListingFeePaid(
   eventId: string,
   paystackRef: string
 ): Promise<void> {
-  await prisma.listingFeePayment.upsert({
-    where: {
-      eventId,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.listingFeePayment.upsert({
+      where: {
+        eventId,
+      },
 
-    update: {
-      status: "paid",
-      paidAt: new Date(),
-      paystackRef,
-    },
+      update: {
+        status: "paid",
+        paidAt: new Date(),
+        paystackRef,
+      },
 
-    create: {
-      eventId,
-      amount: LISTING_FEE_NAIRA,
-      paystackRef,
-      status: "paid",
-      paidAt: new Date(),
-    },
-  });
+      create: {
+        eventId,
+        amount: LISTING_FEE_NAIRA,
+        paystackRef,
+        status: "paid",
+        paidAt: new Date(),
+      },
+    });
 
-  await prisma.event.update({
-    where: {
-      id: eventId,
-    },
-    data: {
-      status: "live",
-    },
+    const event = await tx.event.update({
+      where: {
+        id: eventId,
+      },
+      data: {
+        status: "live",
+      },
+      include: { organiser: true },
+    });
+    await enqueueEmail(tx, { dedupeKey: `listing-fee/${eventId}`, kind: "listing_fee_paid", recipient: event.organiser.email, eventId });
   });
 }
 
@@ -707,6 +715,8 @@ export interface UpdateEventInput {
   venue: string;
   date: string;
   startTime: string;
+  endTime?: string;
+  timezone?: string;
   category: string;
   coverImageUrl?: string;
   tags?: string[];
@@ -853,6 +863,8 @@ export async function updateEvent(
         venue: input.venue,
         date: new Date(input.date),
         startTime: input.startTime,
+        endTime: input.endTime ?? existing.endTime,
+        timezone: input.timezone ?? existing.timezone,
         category: input.category,
         coverImageUrl: input.coverImageUrl || null,
         tags: input.tags ?? [],
@@ -979,8 +991,12 @@ export async function updateEvent(
       }
     }
 
+    if (input.date !== existing.date.toISOString().slice(0, 10) || input.startTime !== existing.startTime || (input.endTime ?? existing.endTime) !== existing.endTime || (input.timezone ?? existing.timezone) !== existing.timezone) {
+      await rescheduleEventEmails(tx, eventId);
+    }
+
     return event;
-  });
+  }, { timeout: 15000 });
 
   /*
    * -------------------------------------------------------------

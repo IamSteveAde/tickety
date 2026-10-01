@@ -39,6 +39,8 @@ export interface EventItem {
 
   // 24-hour time, e.g. "23:00"
   endTime: string;
+  timezone?: string;
+  status?: "live" | "pending" | "disabled" | "archived";
 
   category: EventCategory;
 
@@ -111,6 +113,7 @@ export interface AdminEventSummary {
   date: string;
   startTime: string;
   endTime: string;
+  timezone?: string;
   ticketsSold: number;
   gross: number;
 }

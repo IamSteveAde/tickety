@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Clock3 } from "lucide-react";
+import { eventInstant } from "@/lib/email/schedule";
 
 interface EventCountdownProps {
   date: string;
   startTime: string;
+  timezone?: string;
 }
 
 interface TimeLeft {
@@ -14,60 +16,6 @@ interface TimeLeft {
   minutes: number;
   seconds: number;
   started: boolean;
-}
-
-function parseEventDate(date: string, startTime: string) {
-  const datePart = date.slice(0, 10);
-
-  const time = startTime.trim();
-
-  // Handles:
-  // 18:30
-  // 18:30:00
-  // 6:30 PM
-  // 6:30PM
-  const twelveHourMatch = time.match(
-    /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i
-  );
-
-  if (twelveHourMatch) {
-    let hours = Number(twelveHourMatch[1]);
-    const minutes = Number(twelveHourMatch[2]);
-    const period = twelveHourMatch[3].toUpperCase();
-
-    if (period === "PM" && hours !== 12) {
-      hours += 12;
-    }
-
-    if (period === "AM" && hours === 12) {
-      hours = 0;
-    }
-
-    return new Date(
-      `${datePart}T${String(hours).padStart(2, "0")}:${String(
-        minutes
-      ).padStart(2, "0")}:00`
-    );
-  }
-
-  const twentyFourHourMatch = time.match(
-    /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/
-  );
-
-  if (twentyFourHourMatch) {
-    const hours = Number(twentyFourHourMatch[1]);
-    const minutes = Number(twentyFourHourMatch[2]);
-    const seconds = Number(twentyFourHourMatch[3] ?? 0);
-
-    return new Date(
-      `${datePart}T${String(hours).padStart(2, "0")}:${String(
-        minutes
-      ).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-    );
-  }
-
-  // Fallback if the stored time has an unexpected format.
-  return new Date(`${datePart}T00:00:00`);
 }
 
 function getTimeLeft(target: Date): TimeLeft {
@@ -101,10 +49,11 @@ function pad(value: number) {
 export default function EventCountdown({
   date,
   startTime,
+  timezone,
 }: EventCountdownProps) {
   const targetDate = useMemo(
-    () => parseEventDate(date, startTime),
-    [date, startTime]
+    () => eventInstant(date, startTime, timezone),
+    [date, startTime, timezone]
   );
 
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() =>

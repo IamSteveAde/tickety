@@ -93,6 +93,8 @@ supply:
 
 ## Design notes
 
+Email delivery, subscriptions, branded receipts/QR tickets, and scheduled event updates are wired through Resend. See [the email setup guide](docs/email-notifications.md) for required environment variables, database migration, webhook/cron setup, tests, and template previews.
+
 Brand palette: deep plum/purple represents the website half of the product
 (discovery, dashboards), the green represents the WhatsApp half (checkout,
 delivery) — the color split is a deliberate nod to the hybrid model itself.

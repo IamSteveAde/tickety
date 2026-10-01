@@ -6,6 +6,7 @@ import Badge from "@/components/ui/Badge";
 import TicketTypeCard from "@/components/events/TicketTypeCard";
 import GetTicketButton from "@/components/events/GetTicketButton";
 import EventCountdown from "@/components/events/EventCountdown";
+import EventSubscriptionForm from "@/components/events/EventSubscriptionForm";
 
 import {
   ArrowLeft,
@@ -44,6 +45,7 @@ export default async function EventPage({
           <EventCountdown
             date={event.date}
             startTime={event.startTime}
+            timezone={event.timezone}
           />
         </div>
 
@@ -402,6 +404,8 @@ export default async function EventPage({
       </div>
     </div>
   </div>
+
+  {event.status === "live" && <EventSubscriptionForm eventId={event.id} />}
 
   {/* Help */}
   <div className="mt-4 flex items-center justify-between px-1">

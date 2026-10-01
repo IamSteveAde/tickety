@@ -22,6 +22,8 @@ import {
 import Button from "@/components/ui/Button";
 import { EVENT_CATEGORIES } from "@/lib/utils";
 import CoverImageUpload from "@/components/organiser/CoverImageUpload";
+import EventTimezoneSelect from "@/components/organiser/EventTimezoneSelect";
+import EventCreatedDialog from "@/components/organiser/EventCreatedDialog";
 
 interface DraftTicketType {
   name: string;
@@ -34,6 +36,8 @@ interface DraftQuestion {
 }
 
 export default function EventForm() {
+  const [createdEvent, setCreatedEvent] = useState<{ id: string; slug: string; title: string; status: string } | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string>();
   const [title, setTitle] = useState("");
   const [venue, setVenue] = useState("");
   const [country, setCountry] = useState("Nigeria");
@@ -41,6 +45,7 @@ export default function EventForm() {
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [timezone, setTimezone] = useState("Africa/Lagos");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -251,6 +256,7 @@ export default function EventForm() {
           date,
           startTime,
           endTime,
+          timezone,
           category,
           description,
           coverImageUrl,
@@ -277,11 +283,8 @@ export default function EventForm() {
         );
       }
 
-      if (data.redirectUrl) {
-        window.location.href =
-          data.redirectUrl;
-        return;
-      }
+      setCreatedEvent(data.event);
+      setPaymentUrl(data.redirectUrl);
 
       setStatus("published");
     } catch (err) {
@@ -299,48 +302,8 @@ export default function EventForm() {
      SUCCESS
   ============================================================ */
 
-  if (status === "published") {
-    return (
-      <div className="mx-auto max-w-3xl py-10">
-        <div className="relative overflow-hidden rounded-[32px] bg-[#111014] px-6 py-16 text-center sm:px-12">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#7C3AED]/20 blur-[100px]" />
-
-          <div className="pointer-events-none absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-[#25D366]/10 blur-[100px]" />
-
-          <div className="relative">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#25D366]/10">
-              <CheckCircle2
-                size={32}
-                className="text-[#4ADE80]"
-              />
-            </div>
-
-            <p className="mt-7 text-[10px] font-bold uppercase tracking-[0.22em] text-[#A78BFA]">
-              Published successfully
-            </p>
-
-            <h2 className="mt-3 font-display text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-              {title || "Your event"} is live.
-            </h2>
-
-            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-white/45">
-              Your event page has been created and your
-              Tickety ticket flow is ready for attendees.
-            </p>
-
-            <Button
-              variant="primary"
-              onClick={() =>
-                window.location.reload()
-              }
-              className="mt-8 rounded-full bg-white px-7 text-[#111014] hover:bg-white/90"
-            >
-              Create another event
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  if (status === "published" && createdEvent) {
+    return <EventCreatedDialog event={createdEvent} redirectUrl={paymentUrl} />;
   }
 
   /* ============================================================
@@ -596,6 +559,8 @@ export default function EventForm() {
     className={inputClass}
   />
 </Field>
+
+            <EventTimezoneSelect value={timezone} onChange={setTimezone} />
 
             <Field
               label="Category"

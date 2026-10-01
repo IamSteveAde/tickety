@@ -86,6 +86,8 @@ export default async function EditEventPage({
               state: event.state,
               date: event.date.toISOString().slice(0, 10),
               startTime: event.startTime,
+              endTime: event.endTime,
+              timezone: event.timezone,
               category: event.category,
               description: event.description,
               coverImageUrl: event.coverImageUrl ?? "",

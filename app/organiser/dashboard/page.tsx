@@ -1,3 +1,4 @@
+import { eventInstant } from "@/lib/email/schedule";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -34,6 +35,7 @@ type DashboardEvent = {
   date: string;
   startTime: string;
   endTime: string;
+  timezone?: string;
   ticketsSold: number;
   gross: number;
 };
@@ -82,9 +84,7 @@ export default async function OrganiserDashboardPage({
 const liveEvents = events.filter((event) => {
   if (event.status !== "live") return false;
 
-  const eventEnd = new Date(
-    `${event.date}T${event.endTime}:00`
-  );
+  const eventEnd = eventInstant(event.date, event.endTime, event.timezone);
 
   return eventEnd > now;
 }).length;
@@ -370,9 +370,7 @@ function EventRow({
 }) {
   const isPending = event.status === "pending";
 
-const eventEnd = new Date(
-  `${event.date}T${event.endTime}:00`
-);
+const eventEnd = eventInstant(event.date, event.endTime, event.timezone);
 
 const hasEnded =
   event.status === "live" &&
